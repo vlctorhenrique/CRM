@@ -96,6 +96,107 @@ async function seed(db: AppDatabase, accountDefaults: PreviewAccountDefaults): P
     initialMessage: accountDefaults.initialMessage,
   })
 
+  const [admin] = await db
+    .select({ id: schema.users.id })
+    .from(schema.users)
+    .where(eq(schema.users.email, adminEmail))
+    .limit(1)
+
+  const demoTemplates = [
+    {
+      name: 'Reengajamento 24h',
+      body: 'Oi, {{nome}}! Passando para saber se você ainda tem interesse em {{procedimento}}. Posso te ajudar com os próximos passos?',
+      variables: ['nome', 'procedimento'],
+    },
+    {
+      name: 'Reengajamento 72h',
+      body: '{{nome}}, reservei um horário especial para sua avaliação. Quer que eu te envie as opções?',
+      variables: ['nome'],
+    },
+  ]
+  const templateIds = new Map<string, string>()
+
+  for (const template of demoTemplates) {
+    const [existing] = await db
+      .select({ id: schema.messageTemplates.id })
+      .from(schema.messageTemplates)
+      .where(
+        and(
+          eq(schema.messageTemplates.tenantId, tenant.id),
+          eq(schema.messageTemplates.name, template.name),
+        ),
+      )
+      .limit(1)
+
+    if (existing) {
+      templateIds.set(template.name, existing.id)
+      continue
+    }
+
+    const templateId = randomUUID()
+    await db.insert(schema.messageTemplates).values({
+      id: templateId,
+      tenantId: tenant.id,
+      name: template.name,
+      category: 'utility',
+      language: 'pt_BR',
+      body: template.body,
+      variables: template.variables,
+      status: 'approved',
+      createdByUserId: admin?.id ?? null,
+      createdAt: now,
+      updatedAt: now,
+    })
+    templateIds.set(template.name, templateId)
+  }
+
+  const cadenceName = 'Reengajamento pós-consulta'
+  const [existingCadence] = await db
+    .select({ id: schema.cadences.id })
+    .from(schema.cadences)
+    .where(and(eq(schema.cadences.tenantId, tenant.id), eq(schema.cadences.name, cadenceName)))
+    .limit(1)
+
+  if (!existingCadence) {
+    const cadenceId = randomUUID()
+    await db.insert(schema.cadences).values({
+      id: cadenceId,
+      tenantId: tenant.id,
+      name: cadenceName,
+      description: 'Dois toques para retomar o interesse após a consulta.',
+      status: 'active',
+      createdByUserId: admin?.id ?? null,
+      createdAt: now,
+      updatedAt: now,
+    })
+
+    const firstTemplateId = templateIds.get('Reengajamento 24h')
+    const secondTemplateId = templateIds.get('Reengajamento 72h')
+
+    if (firstTemplateId && secondTemplateId) {
+      await db.insert(schema.cadenceSteps).values([
+        {
+          id: randomUUID(),
+          tenantId: tenant.id,
+          cadenceId,
+          templateId: firstTemplateId,
+          position: 1,
+          delayHours: 24,
+          createdAt: now,
+        },
+        {
+          id: randomUUID(),
+          tenantId: tenant.id,
+          cadenceId,
+          templateId: secondTemplateId,
+          position: 2,
+          delayHours: 72,
+          createdAt: now,
+        },
+      ])
+    }
+  }
+
   const [sdr] = await db
     .select({ id: schema.users.id })
     .from(schema.users)
@@ -311,6 +412,8 @@ async function main(): Promise<void> {
     WEB_ORIGIN: 'http://localhost:3000,http://127.0.0.1:3000',
     LOG_LEVEL: process.env.LOG_LEVEL ?? 'info',
     ENABLE_API_DOCS: 'true',
+    ENABLE_DEV_SIMULATOR: 'true',
+    CADENCE_WORKER_ENABLED: 'false',
     RATE_LIMIT_MAX: '1000',
     APP_VERSION: '0.1.0-preview',
     WHATSAPP_MODE: whatsappMode,

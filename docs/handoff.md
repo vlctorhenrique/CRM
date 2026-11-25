@@ -1,21 +1,37 @@
 # Contexto atual e handoff
 
-Atualizado em 23/11/2026. Este documento resume o estado do projeto para continuar em outra
+Atualizado em 24/11/2026. Este documento resume o estado do projeto para continuar em outra
 seção. Ele não contém tokens nem segredos.
 
 ## Status
 
-- **Etapa 1 — Fundação:** concluída e commitada em `198fd4b`.
-- **Etapa 2 — CRM e WhatsApp:** concluída e commitada em `350be1c`.
-- **Etapa 2 — validação live:** em andamento; faltam credenciais da Meta.
-- **Etapa 3 — IA assistiva:** ainda não iniciada.
+- **Etapa 1 — Fundação:** concluída; commits originais `198fd4b`/`350be1c` preservados na
+  branch `backup/local-main-350be1c`.
+- **Etapa 2 — CRM e WhatsApp:** concluída e reconciliada no PR #1.
+- **Etapa 2 — validação live:** pendente; faltam credenciais da Meta.
+- **B0 — Fundação da Etapa 3:** implementado no branch `chore/b0-foundation` (tech lead); PR
+  pendente de merge.
+- **B1 — Leads/agenda/consentimento:** próxima fase.
+- **B2–B5:** planejadas em `docs/backend-plan.md`.
 
-Branch atual: `main`.
+Branch atual do tech lead: `chore/b0-foundation`. O dev sênior trabalha no worktree
+`C:\Users\victor\CRM-senior`, branch `feat/sd-01-utils`.
 
-A árvore de trabalho tem uma alteração ainda não commitada em `apps/api/dev-preview.ts`:
-suporte a credenciais live na prévia, número exibido configurável e diretório PGlite
-configurável. O arquivo `apps/api/.env` existe localmente, está ignorado pelo Git e guarda a
-configuração live.
+`main` local = `origin/main` em `6fb3049`, após o PR #1 de reconciliação. O arquivo
+`apps/api/.env` existe localmente, está ignorado pelo Git e guarda a configuração live.
+
+### O que entrou no B0
+
+- Governança: `AGENTS.md`, `docs/backend-plan.md`, `docs/agent-protocol.md`,
+  `docs/review-checklist.md`, `docs/tasks.md` e `docs/backend-contract.md`.
+- GitHub: issues #2–#21, CI em `.github/workflows/ci.yml` e PR template.
+- Schema/migration `0002_abnormal_thor.sql`: appointments, templates, cadências, notificações e
+  insights de IA; `conversations.ai_enabled`.
+- Contratos Zod/tipos em `packages/shared`; flags de worker/IA/simulador em `config/env.ts`.
+- Simulador `POST /v1/dev/simulate-inbound` (autenticado; só com `ENABLE_DEV_SIMULATOR=true`).
+- Preview com `ENABLE_DEV_SIMULATOR=true`, dois templates aprovados e cadência ativa de exemplo.
+- Scripts `verify` e `test:e2e`; `apps/api/test/e2e.test.ts` cobre login, inbound, lead,
+  dashboard, configuração e envio manual.
 
 ## Stack e ambiente
 
@@ -64,15 +80,18 @@ configuração live.
 - `GET /v1/conversations`
 - `GET /v1/dashboard/summary`
 - `GET/PATCH /v1/whatsapp/account`
+- `POST /v1/dev/simulate-inbound` (apenas com `ENABLE_DEV_SIMULATOR=true`)
 - `GET/POST /webhooks/whatsapp`
 
 ## Validação já executada
 
-- `npm.cmd run lint`: passou.
-- `npm.cmd run typecheck`: passou.
-- `npm.cmd test`: 5 arquivos, 23 testes, todos passando.
-- `npm.cmd run build`: passou antes dos últimos ajustes exclusivos da prévia live; rodar novamente
-  antes de novo deploy.
+- `npm.cmd run lint`: passou no baseline; rodar novamente no B0.
+- `npm.cmd run typecheck`: passou após as mudanças do B0.
+- `npm.cmd test`: 7 arquivos, 28 testes, todos passando após as mudanças do B0.
+- `npm.cmd run test:e2e`: 1 fluxo headless passando (login, inbound, lead, dashboard,
+  configuração e envio manual).
+- `npm.cmd run build`: passou no `verify` do B0, incluindo Next.js.
+- `npm.cmd run verify`: passou (lint, typecheck, 28 testes e build).
 - Prévia web/API em modo dry-run: login, leads, detalhe, conversas, dashboard e configurações
   responderam 200.
 - Webhook público via túnel: `/health` 200 e desafio `GET /webhooks/whatsapp` 200 com o token
