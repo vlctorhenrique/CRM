@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from 'next/server'
 
-const API_INTERNAL_URL = (process.env.API_INTERNAL_URL ?? 'http://localhost:3333').replace(
+const API_INTERNAL_URL = (process.env.API_INTERNAL_URL ?? 'http://127.0.0.1:3333').replace(
   /\/$/,
   '',
 )
