@@ -15,6 +15,13 @@
       "when": 1795229658796,
       "tag": "0001_true_terror",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1795568816684,
+      "tag": "0002_abnormal_thor",
+      "breakpoints": true
     }
   ]
 }

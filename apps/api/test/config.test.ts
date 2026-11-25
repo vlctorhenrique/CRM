@@ -29,6 +29,11 @@ describe('configuração da API', () => {
     expect(config.accessTokenTtlSeconds).toBe(1800)
     expect(config.webOrigin).toBe('http://localhost:3000')
     expect(config.whatsappMode).toBe('disabled')
+    expect(config.devSimulatorEnabled).toBe(false)
+    expect(config.cadenceWorkerEnabled).toBe(true)
+    expect(config.cadenceWorkerIntervalMs).toBe(30_000)
+    expect(config.aiMode).toBe('fallback')
+    expect(config.aiApiKey).toBeNull()
   })
 
   it('exige credenciais completas no modo live', () => {
@@ -59,5 +64,27 @@ describe('configuração da API', () => {
 
     expect(config.whatsappMode).toBe('live')
     expect(config.whatsappPhoneNumberId).toBe('phone-id')
+  })
+
+  it('exige chave no modo llm e aceita simulador e worker', () => {
+    expect(() =>
+      toAppConfig({
+        ...baseEnv,
+        AI_MODE: 'llm',
+      }),
+    ).toThrow(/AI_API_KEY/)
+
+    const config = toAppConfig({
+      ...baseEnv,
+      AI_MODE: 'llm',
+      AI_API_KEY: 'sk-test-key',
+      ENABLE_DEV_SIMULATOR: 'true',
+      CADENCE_WORKER_ENABLED: 'false',
+    })
+
+    expect(config.aiMode).toBe('llm')
+    expect(config.aiApiKey).toBe('sk-test-key')
+    expect(config.devSimulatorEnabled).toBe(true)
+    expect(config.cadenceWorkerEnabled).toBe(false)
   })
 })

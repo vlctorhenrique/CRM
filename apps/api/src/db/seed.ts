@@ -61,7 +61,7 @@ async function main(): Promise<void> {
     }
 
     if (!tenant) {
-      throw new Error('N�o foi poss�vel criar ou localizar a cl�nica.')
+      throw new Error('Não foi possível criar ou localizar a clínica.')
     }
 
     await ensureWhatsAppAccount(db, tenant.id, {

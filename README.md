@@ -25,16 +25,16 @@ CRM comercial para clínicas de estética e emagrecimento, construído a partir 
 
 ## Stack
 
-| Camada        | Tecnologia                                    |
-| ------------- | --------------------------------------------- |
-| Frontend      | Next.js 16, React 19, Tailwind CSS 4          |
-| Backend       | Node.js 24, Fastify 5, TypeScript             |
-| Banco         | PostgreSQL 17 + Drizzle ORM                   |
-| Filas e cache | Redis 7 (reservado para o motor de cadências) |
-| Autenticação  | Argon2id + JWT (`jose`) + cookies HttpOnly    |
-| Testes        | Vitest + PGlite                               |
-| Infra         | Docker Compose, Nginx                         |
-| IA            | OpenAI (Etapa 3, ainda não integrada)         |
+| Camada        | Tecnologia                                   |
+| ------------- | -------------------------------------------- |
+| Frontend      | Next.js 16, React 19, Tailwind CSS 4         |
+| Backend       | Node.js 24, Fastify 5, TypeScript            |
+| Banco         | PostgreSQL 17 + Drizzle ORM                  |
+| Filas e cache | PostgreSQL para fila; Redis 7 opcional       |
+| Autenticação  | Argon2id + JWT (`jose`) + cookies HttpOnly   |
+| Testes        | Vitest + PGlite                              |
+| Infra         | Docker Compose, Nginx                        |
+| IA            | Fallback local + OpenAI opcional (`AI_MODE`) |
 
 ## Estrutura
 
@@ -123,6 +123,9 @@ npm run dev:web
 - WhatsApp em `dry-run`, com conta e leads de demonstração criados pelo seed.
 - Para simular um webhook: `POST http://localhost:3333/webhooks/whatsapp` com assinatura
   `X-Hub-Signature-256` usando o `WHATSAPP_APP_SECRET` (`preview-app-secret` por padrão).
+- Para simular uma mensagem sem assinatura, autentique-se e use
+  `POST /v1/dev/simulate-inbound` com `{ "phone": "11999998888", "text": "Quero botox" }`.
+  O simulador só existe com `ENABLE_DEV_SIMULATOR=true` e fora de produção.
 
 Para recomeçar do zero, pare a API e remova `apps/api/.pglite-preview`.
 
@@ -137,6 +140,8 @@ Para recomeçar do zero, pare a API e remova `apps/api/.pglite-preview`.
 | `npm run lint`        | Biome check                                   |
 | `npm run lint:fix`    | Biome com correções seguras                   |
 | `npm test`            | Testes de integração/unitários da API         |
+| `npm run test:e2e`    | Fluxo headless completo com PGlite            |
+| `npm run verify`      | Lint + typecheck + testes + build             |
 | `npm run db:generate` | Gera migration a partir do schema Drizzle     |
 | `npm run db:migrate`  | Aplica migrations                             |
 | `npm run db:seed`     | Cria clínica, admin e usuários demo opcionais |

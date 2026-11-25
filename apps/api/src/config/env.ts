@@ -1,4 +1,4 @@
-import { WHATSAPP_MODES, type WhatsAppMode } from '@crm/shared'
+import { AI_MODES, type AiMode, WHATSAPP_MODES, type WhatsAppMode } from '@crm/shared'
 import 'dotenv/config'
 import { z } from 'zod'
 
@@ -16,7 +16,7 @@ const envSchema = z
     NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
     API_PORT: z.coerce.number().int().min(1).max(65535).default(3333),
     API_HOST: z.string().default('0.0.0.0'),
-    DATABASE_URL: z.string().min(1, 'DATABASE_URL � obrigat�ria'),
+    DATABASE_URL: z.string().min(1, 'DATABASE_URL é obrigatória'),
     REDIS_URL: optionalString(),
     JWT_SECRET: z.string().min(32, 'JWT_SECRET deve ter ao menos 32 caracteres'),
     ACCESS_TOKEN_TTL_SECONDS: z.coerce.number().int().min(60).max(86_400).default(1800),
@@ -36,6 +36,15 @@ const envSchema = z
     ENABLE_API_DOCS: booleanString.default(false),
     RATE_LIMIT_MAX: z.coerce.number().int().min(1).default(120),
     RATE_LIMIT_WINDOW: z.string().default('1 minute'),
+    ENABLE_DEV_SIMULATOR: booleanString.default(false),
+    CADENCE_WORKER_ENABLED: booleanString.default(true),
+    CADENCE_WORKER_INTERVAL_MS: z.coerce.number().int().min(1000).max(300_000).default(30_000),
+    CADENCE_MAX_ATTEMPTS: z.coerce.number().int().min(1).max(10).default(3),
+    AI_MODE: z.enum(AI_MODES).default('fallback'),
+    AI_MODEL: optionalString(),
+    AI_API_KEY: optionalString(8),
+    AI_DAILY_LIMIT: z.coerce.number().int().min(0).max(10_000).default(200),
+    AI_TIMEOUT_MS: z.coerce.number().int().min(1000).max(60_000).default(15_000),
     APP_VERSION: z.string().default('0.1.0'),
     WHATSAPP_MODE: z.enum(WHATSAPP_MODES).default('disabled'),
     WHATSAPP_VERIFY_TOKEN: optionalString(8),
@@ -63,6 +72,14 @@ const envSchema = z
     ),
   })
   .superRefine((value, ctx) => {
+    if (value.AI_MODE === 'llm' && !value.AI_API_KEY) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['AI_API_KEY'],
+        message: 'AI_API_KEY é obrigatória quando AI_MODE=llm',
+      })
+    }
+
     if (value.WHATSAPP_MODE !== 'live') {
       return
     }
@@ -100,8 +117,17 @@ export interface AppConfig {
   trustProxy: boolean
   logLevel: string
   enableApiDocs: boolean
+  devSimulatorEnabled: boolean
   rateLimitMax: number
   rateLimitWindow: string
+  cadenceWorkerEnabled: boolean
+  cadenceWorkerIntervalMs: number
+  cadenceMaxAttempts: number
+  aiMode: AiMode
+  aiModel: string | null
+  aiApiKey: string | null
+  aiDailyLimit: number
+  aiTimeoutMs: number
   version: string
   whatsappMode: WhatsAppMode
   whatsappVerifyToken: string | null
@@ -140,8 +166,17 @@ export function toAppConfig(values: Record<string, string | undefined>): AppConf
     trustProxy: env.TRUST_PROXY,
     logLevel: env.LOG_LEVEL,
     enableApiDocs: env.ENABLE_API_DOCS,
+    devSimulatorEnabled: env.ENABLE_DEV_SIMULATOR,
     rateLimitMax: env.RATE_LIMIT_MAX,
     rateLimitWindow: env.RATE_LIMIT_WINDOW,
+    cadenceWorkerEnabled: env.CADENCE_WORKER_ENABLED,
+    cadenceWorkerIntervalMs: env.CADENCE_WORKER_INTERVAL_MS,
+    cadenceMaxAttempts: env.CADENCE_MAX_ATTEMPTS,
+    aiMode: env.AI_MODE,
+    aiModel: env.AI_MODEL ?? null,
+    aiApiKey: env.AI_API_KEY ?? null,
+    aiDailyLimit: env.AI_DAILY_LIMIT,
+    aiTimeoutMs: env.AI_TIMEOUT_MS,
     version: env.APP_VERSION,
     whatsappMode: env.WHATSAPP_MODE,
     whatsappVerifyToken: env.WHATSAPP_VERIFY_TOKEN ?? null,
