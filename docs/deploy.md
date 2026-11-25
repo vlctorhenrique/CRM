@@ -58,6 +58,16 @@ COOKIE_SECURE=true
 WEB_ORIGIN=https://crm.seudominio.com.br
 HTTP_PORT=127.0.0.1:8080
 ENABLE_API_DOCS=false
+
+WHATSAPP_MODE=live
+WHATSAPP_VERIFY_TOKEN=<token-aleatorio-do-webhook>
+WHATSAPP_APP_SECRET=<app-secret-do-app-meta>
+WHATSAPP_ACCESS_TOKEN=<access-token-valido>
+WHATSAPP_PHONE_NUMBER_ID=<phone-number-id>
+WHATSAPP_WABA_ID=<waba-id>
+WHATSAPP_API_VERSION=v23.0
+WHATSAPP_PHONE_NUMBER=+55 11 90000-0000
+WHATSAPP_INITIAL_MESSAGE=Olá! Que bom ter você aqui. Para eu te ajudar melhor, qual procedimento ou tratamento despertou seu interesse?
 ```
 
 Gere o segredo JWT com:
@@ -87,6 +97,32 @@ Confirme o health check:
 curl -i http://127.0.0.1:8080/healthz
 docker compose exec api node -e "fetch('http://127.0.0.1:3333/health').then(async r=>{console.log(r.status, await r.text())})"
 ```
+
+### Configuração do WhatsApp
+
+O container do Nginx encaminha `POST/GET /webhooks/whatsapp` diretamente para a API. No painel da
+Meta, configure o webhook com:
+
+- Callback URL: `https://crm.seudominio.com.br/webhooks/whatsapp`
+- Verify token: o mesmo valor de `WHATSAPP_VERIFY_TOKEN`
+- Campo assinado: `messages`
+
+O `WHATSAPP_APP_SECRET` valida a assinatura de cada evento. Com `WHATSAPP_MODE=live`, a API não
+inicia se verify token, app secret, access token ou phone number ID estiverem ausentes. O seed cria
+a conta da clínica usando `WHATSAPP_PHONE_NUMBER_ID` e `WHATSAPP_PHONE_NUMBER`; o administrador pode
+ajustar número exibido e mensagem inicial em **Configurações**.
+
+Valide com uma mensagem real para o número oficial:
+
+```bash
+docker compose logs -f api
+curl -s https://crm.seudominio.com.br/healthz
+```
+
+A mensagem deve criar o lead, a conversa e o primeiro atendimento automático (uma única vez). Se o
+webhook falhar, confira a assinatura, o phone number ID e o status do evento em `webhook_events`.
+
+Em desenvolvimento, use `WHATSAPP_MODE=dry-run` para validar sem enviar mensagens reais.
 
 ## 4. HTTPS no host
 
@@ -202,6 +238,9 @@ As migrations são aplicadas no start da API. Faça backup antes de atualizaçõ
 - [ ] `SEED_DEMO_USERS=false` e `NEXT_PUBLIC_SHOW_DEMO_HINTS=false`.
 - [ ] HTTPS ativo e `COOKIE_SECURE=true`.
 - [ ] `WEB_ORIGIN` igual ao domínio final com HTTPS.
+- [ ] Webhook da Meta apontando para `https://<domínio>/webhooks/whatsapp`.
+- [ ] `WHATSAPP_MODE=live` somente com credenciais completas e testadas.
+- [ ] App secret e access token fora do Git e com rotação planejada.
 - [ ] Portas do PostgreSQL, Redis e API não expostas publicamente.
 - [ ] Firewall liberando apenas 22, 80 e 443.
 - [ ] Backup externo diário com teste de restauração.

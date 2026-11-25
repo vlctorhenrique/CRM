@@ -14,7 +14,7 @@ import {
   type SendMessageInput,
   type UpdateLeadInput,
 } from '@crm/shared'
-import { and, asc, count, desc, eq, ilike, inArray, or } from 'drizzle-orm'
+import { and, count, desc, eq, ilike, inArray, or } from 'drizzle-orm'
 import type { AppConfig } from '../../config/env.js'
 import type { AppDatabase } from '../../db/client.js'
 import { conversations, leads, messages, users, whatsappAccounts } from '../../db/schema/index.js'
@@ -251,14 +251,16 @@ export async function listLeads(
 
   if (filters.search) {
     const pattern = `%${filters.search}%`
-    conditions.push(
-      or(
-        ilike(leads.name, pattern),
-        ilike(leads.phoneNormalized, pattern),
-        ilike(leads.phoneRaw, pattern),
-        ilike(leads.interestProcedure, pattern),
-      )!,
+    const searchCondition = or(
+      ilike(leads.name, pattern),
+      ilike(leads.phoneNormalized, pattern),
+      ilike(leads.phoneRaw, pattern),
+      ilike(leads.interestProcedure, pattern),
     )
+
+    if (searchCondition) {
+      conditions.push(searchCondition)
+    }
   }
 
   const where = and(...conditions)

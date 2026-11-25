@@ -350,10 +350,7 @@ export function LeadWorkspace({
             </label>
           </div>
 
-          <label
-            htmlFor="lead-detail-interest"
-            className="block text-sm font-medium text-ink-soft"
-          >
+          <label htmlFor="lead-detail-interest" className="block text-sm font-medium text-ink-soft">
             Procedimento de interesse
             <Input
               id="lead-detail-interest"

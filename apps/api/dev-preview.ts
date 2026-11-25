@@ -15,11 +15,20 @@ import { ensureWhatsAppAccount } from './src/modules/whatsapp/whatsapp.service.j
 
 const currentDirectory = path.dirname(fileURLToPath(import.meta.url))
 const migrationsFolder = path.resolve(currentDirectory, 'drizzle')
-const dataDirectory = path.resolve(currentDirectory, '.pglite-preview')
+const dataDirectory = path.resolve(
+  currentDirectory,
+  process.env.PREVIEW_DATA_DIR ?? '.pglite-preview',
+)
 const adminEmail = 'admin@clinica.demo'
 const demoPassword = process.env.SEED_ADMIN_PASSWORD ?? 'ChangeMe123!'
 
-async function seed(db: AppDatabase): Promise<void> {
+interface PreviewAccountDefaults {
+  phoneNumberId: string
+  displayPhoneNumber: string
+  initialMessage: string
+}
+
+async function seed(db: AppDatabase, accountDefaults: PreviewAccountDefaults): Promise<void> {
   const now = new Date()
   const slug = process.env.SEED_TENANT_SLUG ?? 'clinica-demo'
 
@@ -80,14 +89,11 @@ async function seed(db: AppDatabase): Promise<void> {
     })
   }
 
-  const initialMessage =
-    'Olá! Que bom ter você aqui. Para eu te ajudar melhor, qual procedimento ou tratamento despertou seu interesse?'
-
   const account = await ensureWhatsAppAccount(db, tenant.id, {
-    phoneNumberId: 'preview-phone-number-id',
-    displayPhoneNumber: '+55 11 99999-0000',
+    phoneNumberId: accountDefaults.phoneNumberId,
+    displayPhoneNumber: accountDefaults.displayPhoneNumber,
     status: 'connected',
-    initialMessage,
+    initialMessage: accountDefaults.initialMessage,
   })
 
   const [sdr] = await db
@@ -231,8 +237,8 @@ async function seed(db: AppDatabase): Promise<void> {
         ? new Date(now.getTime() - lastMessage.minutesAgo * 60 * 1000)
         : null,
       initialMessageSentAt:
-        demo.messages.length > 0
-          ? new Date(now.getTime() - demo.messages[1]!.minutesAgo * 60 * 1000)
+        demo.messages.length > 1
+          ? new Date(now.getTime() - (demo.messages[1]?.minutesAgo ?? 0) * 60 * 1000)
           : null,
       createdAt,
       updatedAt: now,
@@ -288,6 +294,13 @@ async function seed(db: AppDatabase): Promise<void> {
 }
 
 async function main(): Promise<void> {
+  const whatsappMode = process.env.WHATSAPP_MODE ?? 'dry-run'
+  const whatsappLive = whatsappMode === 'live'
+  const phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID ?? 'preview-phone-number-id'
+  const displayPhoneNumber = process.env.WHATSAPP_PHONE_NUMBER ?? '+55 11 99999-0000'
+  const initialMessage =
+    process.env.WHATSAPP_INITIAL_MESSAGE ??
+    'Olá! Que bom ter você aqui. Para eu te ajudar melhor, qual procedimento ou tratamento despertou seu interesse?'
   const config = toAppConfig({
     NODE_ENV: 'development',
     API_PORT: process.env.API_PORT ?? '3333',
@@ -300,6 +313,17 @@ async function main(): Promise<void> {
     ENABLE_API_DOCS: 'true',
     RATE_LIMIT_MAX: '1000',
     APP_VERSION: '0.1.0-preview',
+    WHATSAPP_MODE: whatsappMode,
+    WHATSAPP_VERIFY_TOKEN: whatsappLive
+      ? process.env.WHATSAPP_VERIFY_TOKEN
+      : (process.env.WHATSAPP_VERIFY_TOKEN ?? 'preview-verify-token'),
+    WHATSAPP_APP_SECRET: whatsappLive
+      ? process.env.WHATSAPP_APP_SECRET
+      : (process.env.WHATSAPP_APP_SECRET ?? 'preview-app-secret'),
+    WHATSAPP_ACCESS_TOKEN: process.env.WHATSAPP_ACCESS_TOKEN,
+    WHATSAPP_PHONE_NUMBER_ID: whatsappLive ? process.env.WHATSAPP_PHONE_NUMBER_ID : phoneNumberId,
+    WHATSAPP_WABA_ID: process.env.WHATSAPP_WABA_ID,
+    WHATSAPP_INITIAL_MESSAGE: initialMessage,
   })
 
   const client = new PGlite(dataDirectory)
@@ -309,7 +333,7 @@ async function main(): Promise<void> {
 
   const db = pgliteDb as unknown as AppDatabase
 
-  await seed(db)
+  await seed(db, { phoneNumberId, displayPhoneNumber, initialMessage })
 
   const app = await buildApp({ config, db, redis: null })
 
