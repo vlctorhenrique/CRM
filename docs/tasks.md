@@ -21,7 +21,7 @@ cada merge. As Issues do GitHub espelham os mesmos IDs.
 | SD-06 | Dev sênior | B3: AI service/routes/job com fallback                                 | `feat/sd-06-ai`            | TL-03, SD-01 | #15   | review |
 | TL-09 | Tech lead  | B3: hook do webhook e flags de IA                                      | `feat/b3-hook`             | SD-06        | #16   | review |
 | SD-07 | Dev sênior | B4: reports service/routes                                             | `feat/sd-07-reports`       | TL-08        | #17   | review |
-| TL-10 | Tech lead  | B4: health/backlog/robustez, contrato v1 e handoff                     | `chore/b4-freeze`          | TL-09, SD-07 | #18   | todo   |
+| TL-10 | Tech lead  | B4: health/backlog/robustez, contrato v1 e handoff                     | `chore/b4-freeze`          | TL-09, SD-07 | #18   | review |
 | TL-11 | Tech lead  | B5: Meta live e staging                                                | `feat/b5-meta`             | TL-10        | #19   | todo   |
 | SD-08 | Dev sênior | F: agenda, cadências, relatórios e adições de leads                    | `feat/sd-08-pages`         | TL-10        | #20   | todo   |
 | TL-12 | Tech lead  | F: shell, clients, e2e final e release                                 | `feat/f-integration`       | TL-11, SD-08 | #21   | todo   |

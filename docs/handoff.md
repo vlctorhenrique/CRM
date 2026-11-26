@@ -14,18 +14,23 @@ seção. Ele não contém tokens nem segredos.
 - **SD-01 — Utilitários puros:** concluído e mergeado em `80a815d` (PR #22): extrator
   determinístico, horário comercial e render de templates. `confidence` vem em 0-1; converter
   para 0-100 ao persistir em B3.
-- **B1 — Leads/agenda/consentimento:** concluído. TL-04 em `c2c121d` (PR #26) entregou filtro
-  `assignment`, claim/release idempotentes e consentimento auditado; SD-02 em `e84ea23` (PR #29)
-  entregou CRUD de agendamentos com RBAC, conflitos, transições e notificações; TL-05 integra seed
-  e e2e (PR em andamento).
-- **B2–B5:** planejadas em `docs/backend-plan.md`.
+- **B1 — Leads/agenda/consentimento:** concluído (PRs #26, #29 e #30): filtro `assignment`,
+  claim/release, consentimento auditado, CRUD de agendamentos e e2e headless.
+- **B2 — Cadências:** concluído (PRs #31–#36): templates, cadências, inscrições, worker, hooks de
+  opt-out/resposta, notificações e seed/e2e.
+- **B3 — IA assistiva:** concluído (PRs #37–#38): insights com fallback/LLM opcional e hook no
+  webhook; `confidence` persistido como 0-100.
+- **B4 — Relatórios e robustez:** SD-07 em `e4667e6` (PR #39); TL-10 (health/backlog e contrato v1)
+  em andamento.
+- **B5 — Meta live:** pendente de credenciais.
+- **F — Frontend:** pendente; páginas atuais são placeholders.
 - **Proteção de `main`:** não disponível no plano atual do repositório privado; PR + CI `verify`
   continuam obrigatórios por convenção até o repo ser público/Pro.
 
-Branch atual do tech lead: `feat/b1-integration` (seed/e2e do B1). Como o dev sênior está fora, o
-tech lead também assumiu SD-02; o worktree `C:\Users\victor\CRM-senior` permanece disponível.
+Branch atual do tech lead: `chore/b4-freeze`. Como o dev sênior está fora, o tech lead assumiu
+todas as tarefas; o worktree `C:\Users\victor\CRM-senior` permanece disponível.
 
-`main` local = `origin/main` em `e84ea23`. O arquivo `apps/api/.env` existe localmente, está
+`main` local = `origin/main` em `e4667e6`. O arquivo `apps/api/.env` existe localmente, está
 ignorado pelo Git e guarda a configuração live.
 
 ### O que entrou no B0
@@ -95,11 +100,11 @@ ignorado pelo Git e guarda a configuração live.
 
 - `npm.cmd run lint`: passou no baseline; rodar novamente no B0.
 - `npm.cmd run typecheck`: passou após as mudanças do B0.
-- `npm.cmd test`: 11 arquivos, 81 testes, todos passando após o B1.
+- `npm.cmd test`: 19 arquivos, 103 testes, todos passando após o SD-07.
 - `npm.cmd run test:e2e`: 1 fluxo headless passando (login, inbound, lead, dashboard,
   configuração e envio manual).
-- `npm.cmd run build`: passou no `verify` do SD-01, incluindo Next.js.
-- `npm.cmd run verify`: passou (lint, typecheck, 81 testes e build).
+- `npm.cmd run build`: passou no `verify` do SD-07, incluindo Next.js.
+- `npm.cmd run verify`: passou (lint, typecheck, 103 testes e build).
 - Prévia web/API em modo dry-run: login, leads, detalhe, conversas, dashboard e configurações
   responderam 200.
 - Webhook público via túnel: `/health` 200 e desafio `GET /webhooks/whatsapp` 200 com o token
