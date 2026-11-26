@@ -9,7 +9,7 @@ cada merge. As Issues do GitHub espelham os mesmos IDs.
 | TL-02 | Tech lead  | Simulador inbound, harness headless e seed demo                        | `chore/b0-foundation`      | TL-01        | #3    | done   |
 | TL-03 | Tech lead  | Contrato v0: schema/migrations B1-B3, shared e `backend-contract.md`   | `chore/b0-foundation`      | TL-01        | #4    | done   |
 | SD-01 | Dev sênior | Utilitários puros: extrator IA, horário comercial e render de template | `feat/sd-01-utils`         | —            | #5    | done   |
-| TL-04 | Tech lead  | B1: fila de não atribuídos, claim/release e consentimento              | `feat/b1-leads`            | TL-03        | #6    | doing  |
+| TL-04 | Tech lead  | B1: fila de não atribuídos, claim/release e consentimento              | `feat/b1-leads`            | TL-03        | #6    | done   |
 | SD-02 | Dev sênior | B1: appointments service/routes e testes                               | `feat/sd-02-appointments`  | TL-03        | #7    | doing  |
 | TL-05 | Tech lead  | B1: wiring, seed e e2e headless                                        | `feat/b1-integration`      | TL-04, SD-02 | #8    | todo   |
 | SD-03 | Dev sênior | B2: cadence CRUD, enrollment e eligibility                             | `feat/sd-03-cadence-api`   | TL-03        | #9    | todo   |
