@@ -5,10 +5,10 @@ cada merge. As Issues do GitHub espelham os mesmos IDs.
 
 | ID    | Dono       | Entrega                                                                | Branch                     | Depende      | Issue | Status |
 | ----- | ---------- | ---------------------------------------------------------------------- | -------------------------- | ------------ | ----- | ------ |
-| TL-01 | Tech lead  | Reconciliar Git, baseline, encoding, CI e `verify`                     | `chore/b0-foundation`      | —            | #2    | review |
-| TL-02 | Tech lead  | Simulador inbound, harness headless e seed demo                        | `chore/b0-foundation`      | TL-01        | #3    | review |
-| TL-03 | Tech lead  | Contrato v0: schema/migrations B1-B3, shared e `backend-contract.md`   | `chore/b0-foundation`      | TL-01        | #4    | review |
-| SD-01 | Dev sênior | Utilitários puros: extrator IA, horário comercial e render de template | `feat/sd-01-utils`         | —            | #5    | doing  |
+| TL-01 | Tech lead  | Reconciliar Git, baseline, encoding, CI e `verify`                     | `chore/b0-foundation`      | —            | #2    | done   |
+| TL-02 | Tech lead  | Simulador inbound, harness headless e seed demo                        | `chore/b0-foundation`      | TL-01        | #3    | done   |
+| TL-03 | Tech lead  | Contrato v0: schema/migrations B1-B3, shared e `backend-contract.md`   | `chore/b0-foundation`      | TL-01        | #4    | done   |
+| SD-01 | Dev sênior | Utilitários puros: extrator IA, horário comercial e render de template | `feat/sd-01-utils`         | —            | #5    | review |
 | TL-04 | Tech lead  | B1: fila de não atribuídos, claim/release e consentimento              | `feat/b1-leads`            | TL-03        | #6    | todo   |
 | SD-02 | Dev sênior | B1: appointments service/routes e testes                               | `feat/sd-02-appointments`  | TL-03        | #7    | todo   |
 | TL-05 | Tech lead  | B1: wiring, seed e e2e headless                                        | `feat/b1-integration`      | TL-04, SD-02 | #8    | todo   |
@@ -31,3 +31,4 @@ cada merge. As Issues do GitHub espelham os mesmos IDs.
 - Estimativas: B0 2-3d; B1 4-5d; B2 6-8d; B3 4-5d; B4 2-3d; B5 3-5d; F 7-10d.
 - B5 pode rodar em paralelo com F.
 - Toda tarefa exige testes e `npm.cmd run verify` verde.
+- SD-01 está no PR #22; converter `confidence` 0-1 para 0-100 ao persistir em B3.

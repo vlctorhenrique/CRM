@@ -112,7 +112,9 @@ Regras:
 - `unique(message_id, type)` para idempotência.
 - `fallback` usa extrator determinístico; `llm` só com `AI_API_KEY`.
 - Resultado é silencioso: nunca envia mensagem automaticamente.
-- `confidence` 0-100; `result` guarda apenas dados estruturados, sem conteúdo clínico bruto.
+- `confidence` é 0-1 no utilitário determinístico; ao persistir em `ai_insights.confidence`
+  (inteiro), multiplicar por 100 e arredondar. `result` guarda apenas dados estruturados, sem
+  conteúdo clínico bruto.
 
 ## Endpoints
 

@@ -9,16 +9,17 @@ seção. Ele não contém tokens nem segredos.
   branch `backup/local-main-350be1c`.
 - **Etapa 2 — CRM e WhatsApp:** concluída e reconciliada no PR #1.
 - **Etapa 2 — validação live:** pendente; faltam credenciais da Meta.
-- **B0 — Fundação da Etapa 3:** implementado no branch `chore/b0-foundation` (tech lead); PR
-  pendente de merge.
+- **B0 — Fundação da Etapa 3:** concluído e mergeado na `main` em `09b7703` (PR #23); issues
+  #2–#4 fechadas.
+- **SD-01 — Utilitários puros:** implementado pelo dev sênior no PR #22, em revisão.
 - **B1 — Leads/agenda/consentimento:** próxima fase.
 - **B2–B5:** planejadas em `docs/backend-plan.md`.
 
-Branch atual do tech lead: `chore/b0-foundation`. O dev sênior trabalha no worktree
-`C:\Users\victor\CRM-senior`, branch `feat/sd-01-utils`.
+Branch atual do tech lead: `chore/b0-close` (fechamento do board). O dev sênior trabalha no
+worktree `C:\Users\victor\CRM-senior`, branch `feat/sd-01-utils`.
 
-`main` local = `origin/main` em `6fb3049`, após o PR #1 de reconciliação. O arquivo
-`apps/api/.env` existe localmente, está ignorado pelo Git e guarda a configuração live.
+`main` local = `origin/main` em `09b7703`. O arquivo `apps/api/.env` existe localmente, está
+ignorado pelo Git e guarda a configuração live.
 
 ### O que entrou no B0
 
