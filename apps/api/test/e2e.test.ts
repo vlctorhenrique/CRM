@@ -91,5 +91,57 @@ describe('fluxo headless', () => {
     })
     expect(sent.statusCode).toBe(201)
     expect(sent.json().message.status).toBe('sent')
+
+    const claimed = await context.app.inject({
+      method: 'POST',
+      url: `/v1/leads/${leadId}/claim`,
+      headers: { cookie },
+    })
+    expect(claimed.statusCode).toBe(200)
+    expect(claimed.json().lead.ownerUserId).toBe(admin.id)
+
+    const appointment = await context.app.inject({
+      method: 'POST',
+      url: '/v1/appointments',
+      headers: { cookie },
+      payload: {
+        leadId,
+        scheduledAt: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString(),
+        procedure: 'Harmonização facial',
+      },
+    })
+    expect(appointment.statusCode).toBe(201)
+    const appointmentId = appointment.json().appointment.id as string
+
+    const appointments = await context.app.inject({
+      method: 'GET',
+      url: `/v1/appointments?leadId=${leadId}`,
+      headers: { cookie },
+    })
+    expect(appointments.statusCode).toBe(200)
+    expect(appointments.json().total).toBe(1)
+
+    const confirmed = await context.app.inject({
+      method: 'PATCH',
+      url: `/v1/appointments/${appointmentId}`,
+      headers: { cookie },
+      payload: { status: 'confirmed' },
+    })
+    expect(confirmed.statusCode).toBe(200)
+    expect(confirmed.json().appointment.status).toBe('confirmed')
+
+    await context.app.inject({
+      method: 'PATCH',
+      url: `/v1/leads/${leadId}`,
+      headers: { cookie },
+      payload: { status: 'scheduled' },
+    })
+
+    const finalDashboard = await context.app.inject({
+      method: 'GET',
+      url: '/v1/dashboard/summary',
+      headers: { cookie },
+    })
+    expect(finalDashboard.json().scheduled).toBeGreaterThanOrEqual(1)
   })
 })

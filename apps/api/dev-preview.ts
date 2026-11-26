@@ -392,6 +392,44 @@ async function seed(db: AppDatabase, accountDefaults: PreviewAccountDefaults): P
       })
     }
   }
+
+  const [juliana] = await db
+    .select({ id: schema.leads.id })
+    .from(schema.leads)
+    .where(
+      and(eq(schema.leads.tenantId, tenant.id), eq(schema.leads.phoneNormalized, '+5511976543210')),
+    )
+    .limit(1)
+
+  if (juliana) {
+    const [existing] = await db
+      .select({ id: schema.appointments.id })
+      .from(schema.appointments)
+      .where(
+        and(
+          eq(schema.appointments.tenantId, tenant.id),
+          eq(schema.appointments.leadId, juliana.id),
+        ),
+      )
+      .limit(1)
+
+    if (!existing) {
+      await db.insert(schema.appointments).values({
+        id: randomUUID(),
+        tenantId: tenant.id,
+        leadId: juliana.id,
+        ownerUserId: manager?.id ?? admin?.id ?? null,
+        createdByUserId: admin?.id ?? null,
+        procedure: 'Botox',
+        scheduledAt: new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000),
+        durationMinutes: 60,
+        status: 'scheduled',
+        notes: 'Avaliação inicial de demonstração.',
+        createdAt: now,
+        updatedAt: now,
+      })
+    }
+  }
 }
 
 async function main(): Promise<void> {
