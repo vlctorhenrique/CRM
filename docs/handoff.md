@@ -11,14 +11,16 @@ seção. Ele não contém tokens nem segredos.
 - **Etapa 2 — validação live:** pendente; faltam credenciais da Meta.
 - **B0 — Fundação da Etapa 3:** concluído e mergeado na `main` em `09b7703` (PR #23); issues
   #2–#4 fechadas.
-- **SD-01 — Utilitários puros:** implementado pelo dev sênior no PR #22, em revisão.
-- **B1 — Leads/agenda/consentimento:** próxima fase.
+- **SD-01 — Utilitários puros:** concluído e mergeado em `80a815d` (PR #22): extrator
+  determinístico, horário comercial e render de templates. `confidence` vem em 0-1; converter
+  para 0-100 ao persistir em B3.
+- **B1 — Leads/agenda/consentimento:** iniciado; TL-04 e SD-02 em andamento.
 - **B2–B5:** planejadas em `docs/backend-plan.md`.
 
-Branch atual do tech lead: `chore/b0-close` (fechamento do board). O dev sênior trabalha no
-worktree `C:\Users\victor\CRM-senior`, branch `feat/sd-01-utils`.
+Branch atual do tech lead: `chore/b1-start` (atualização do board). O dev sênior trabalha no
+worktree `C:\Users\victor\CRM-senior`, agora na branch `feat/sd-02-appointments`.
 
-`main` local = `origin/main` em `09b7703`. O arquivo `apps/api/.env` existe localmente, está
+`main` local = `origin/main` em `80a815d`. O arquivo `apps/api/.env` existe localmente, está
 ignorado pelo Git e guarda a configuração live.
 
 ### O que entrou no B0
@@ -88,11 +90,11 @@ ignorado pelo Git e guarda a configuração live.
 
 - `npm.cmd run lint`: passou no baseline; rodar novamente no B0.
 - `npm.cmd run typecheck`: passou após as mudanças do B0.
-- `npm.cmd test`: 7 arquivos, 28 testes, todos passando após as mudanças do B0.
+- `npm.cmd test`: 9 arquivos, 72 testes, todos passando após o SD-01.
 - `npm.cmd run test:e2e`: 1 fluxo headless passando (login, inbound, lead, dashboard,
   configuração e envio manual).
-- `npm.cmd run build`: passou no `verify` do B0, incluindo Next.js.
-- `npm.cmd run verify`: passou (lint, typecheck, 28 testes e build).
+- `npm.cmd run build`: passou no `verify` do SD-01, incluindo Next.js.
+- `npm.cmd run verify`: passou (lint, typecheck, 72 testes e build).
 - Prévia web/API em modo dry-run: login, leads, detalhe, conversas, dashboard e configurações
   responderam 200.
 - Webhook público via túnel: `/health` 200 e desafio `GET /webhooks/whatsapp` 200 com o token
