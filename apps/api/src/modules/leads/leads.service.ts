@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto'
 import {
   type AuthUser,
+  type ConsentLeadInput,
   type ConversationView,
   type CreateLeadInput,
   isValidPhone,
@@ -14,7 +15,7 @@ import {
   type SendMessageInput,
   type UpdateLeadInput,
 } from '@crm/shared'
-import { and, count, desc, eq, ilike, inArray, or } from 'drizzle-orm'
+import { and, count, desc, eq, ilike, inArray, isNull, or } from 'drizzle-orm'
 import type { AppConfig } from '../../config/env.js'
 import type { AppDatabase } from '../../db/client.js'
 import { conversations, leads, messages, users, whatsappAccounts } from '../../db/schema/index.js'
@@ -30,6 +31,7 @@ export interface AuditMetadata {
 export interface LeadListFilters {
   search?: string | undefined
   status?: LeadStatus | undefined
+  assignment?: 'all' | 'mine' | 'unassigned' | undefined
   limit: number
   offset: number
 }
@@ -56,6 +58,10 @@ function canManageAssignment(user: AuthUser): boolean {
 }
 
 function leadIsVisible(user: AuthUser, ownerUserId: string | null): boolean {
+  return user.role !== 'sdr' || ownerUserId === null || ownerUserId === user.id
+}
+
+function canModifyLead(user: AuthUser, ownerUserId: string | null): boolean {
   return user.role !== 'sdr' || ownerUserId === user.id
 }
 
@@ -240,9 +246,17 @@ export async function listLeads(
   filters: LeadListFilters,
 ): Promise<LeadListResponse> {
   const conditions = [eq(leads.tenantId, tenantId)]
+  const assignment = filters.assignment ?? 'all'
 
-  if (context.user.role === 'sdr') {
+  if (assignment === 'mine') {
     conditions.push(eq(leads.ownerUserId, context.user.id))
+  } else if (assignment === 'unassigned') {
+    conditions.push(isNull(leads.ownerUserId))
+  } else if (context.user.role === 'sdr') {
+    const visible = or(eq(leads.ownerUserId, context.user.id), isNull(leads.ownerUserId))
+    if (visible) {
+      conditions.push(visible)
+    }
   }
 
   if (filters.status) {
@@ -541,6 +555,148 @@ export async function updateLead(
   }
 
   return toLeadDetail(updated, conversation)
+}
+
+export async function claimLead(
+  db: AppDatabase,
+  context: LeadAccessContext,
+  tenantId: string,
+  leadId: string,
+  metadata: AuditMetadata,
+): Promise<LeadDetail> {
+  const row = await findLeadRow(db, tenantId, leadId)
+
+  if (!row) {
+    throw notFound('Lead não encontrado.')
+  }
+
+  if (row.lead.ownerUserId === context.user.id) {
+    return toLeadDetail(row, await findConversationRow(db, tenantId, leadId))
+  }
+
+  if (row.lead.ownerUserId !== null) {
+    throw new AppError(409, 'LEAD_ALREADY_CLAIMED', 'Este lead já possui um responsável.')
+  }
+
+  const now = new Date()
+  await db
+    .update(leads)
+    .set({ ownerUserId: context.user.id, updatedAt: now })
+    .where(and(eq(leads.id, leadId), eq(leads.tenantId, tenantId)))
+
+  await recordAudit(db, {
+    tenantId,
+    actorUserId: context.user.id,
+    action: 'lead.claimed',
+    entityType: 'lead',
+    entityId: leadId,
+    metadata: { previousOwnerId: null },
+    ip: metadata.ip,
+    userAgent: metadata.userAgent,
+  })
+
+  const updated = await findLeadRow(db, tenantId, leadId)
+
+  if (!updated) {
+    throw notFound('Lead não encontrado.')
+  }
+
+  return toLeadDetail(updated, await findConversationRow(db, tenantId, leadId))
+}
+
+export async function releaseLead(
+  db: AppDatabase,
+  context: LeadAccessContext,
+  tenantId: string,
+  leadId: string,
+  metadata: AuditMetadata,
+): Promise<LeadDetail> {
+  const row = await findLeadRow(db, tenantId, leadId)
+
+  if (!row || !leadIsVisible(context.user, row.lead.ownerUserId)) {
+    throw notFound('Lead não encontrado.')
+  }
+
+  if (row.lead.ownerUserId === null) {
+    return toLeadDetail(row, await findConversationRow(db, tenantId, leadId))
+  }
+
+  const now = new Date()
+  await db
+    .update(leads)
+    .set({ ownerUserId: null, updatedAt: now })
+    .where(and(eq(leads.id, leadId), eq(leads.tenantId, tenantId)))
+
+  await recordAudit(db, {
+    tenantId,
+    actorUserId: context.user.id,
+    action: 'lead.released',
+    entityType: 'lead',
+    entityId: leadId,
+    metadata: { previousOwnerId: row.lead.ownerUserId },
+    ip: metadata.ip,
+    userAgent: metadata.userAgent,
+  })
+
+  const updated = await findLeadRow(db, tenantId, leadId)
+
+  if (!updated) {
+    throw notFound('Lead não encontrado.')
+  }
+
+  return toLeadDetail(updated, await findConversationRow(db, tenantId, leadId))
+}
+
+export async function recordLeadConsent(
+  db: AppDatabase,
+  context: LeadAccessContext,
+  tenantId: string,
+  leadId: string,
+  input: ConsentLeadInput,
+  metadata: AuditMetadata,
+): Promise<LeadDetail> {
+  const row = await findLeadRow(db, tenantId, leadId)
+
+  if (!row || !canModifyLead(context.user, row.lead.ownerUserId)) {
+    throw notFound('Lead não encontrado.')
+  }
+
+  const now = new Date()
+  const values: Partial<typeof leads.$inferInsert> = {
+    consentStatus: input.status,
+    consentEvidence: input.evidence,
+    consentTextVersion: input.textVersion,
+    consentAt: now,
+    updatedAt: now,
+  }
+
+  if (input.status === 'revoked') {
+    values.optOutAt = row.lead.optOutAt ?? now
+  }
+
+  await db
+    .update(leads)
+    .set(values)
+    .where(and(eq(leads.id, leadId), eq(leads.tenantId, tenantId)))
+
+  await recordAudit(db, {
+    tenantId,
+    actorUserId: context.user.id,
+    action: 'lead.consent_recorded',
+    entityType: 'lead',
+    entityId: leadId,
+    metadata: { status: input.status, textVersion: input.textVersion },
+    ip: metadata.ip,
+    userAgent: metadata.userAgent,
+  })
+
+  const updated = await findLeadRow(db, tenantId, leadId)
+
+  if (!updated) {
+    throw notFound('Lead não encontrado.')
+  }
+
+  return toLeadDetail(updated, await findConversationRow(db, tenantId, leadId))
 }
 
 export async function markConversationRead(

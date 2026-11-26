@@ -357,8 +357,11 @@ describe('leads, conversas e webhook do WhatsApp', () => {
     })
 
     expect(sdrList.statusCode).toBe(200)
-    expect(sdrList.json().items).toHaveLength(1)
-    expect(sdrList.json().items[0].ownerUserId).toBe(sdr.id)
+    const visible = sdrList.json().items as Array<{ id: string; ownerUserId: string | null }>
+    expect(visible.some((item) => item.id === created.json().lead.id)).toBe(true)
+    expect(visible.every((item) => item.ownerUserId === null || item.ownerUserId === sdr.id)).toBe(
+      true,
+    )
 
     const inboundLead = await ctx.app.inject({
       method: 'GET',
@@ -366,6 +369,13 @@ describe('leads, conversas e webhook do WhatsApp', () => {
       headers: { cookie: adminCookie },
     })
     const otherLeadId = inboundLead.json().items[0].id as string
+
+    await ctx.app.inject({
+      method: 'PATCH',
+      url: `/v1/leads/${otherLeadId}`,
+      headers: { cookie: adminCookie },
+      payload: { ownerUserId: admin.id },
+    })
 
     const forbiddenDetail = await ctx.app.inject({
       method: 'GET',
