@@ -18,6 +18,8 @@ seção. Ele não contém tokens nem segredos.
   `assignment`, claim/release idempotentes e consentimento auditado; revogação marca `opt_out_at`.
   SD-02 em andamento; TL-05 depende do merge de SD-02.
 - **B2–B5:** planejadas em `docs/backend-plan.md`.
+- **Proteção de `main`:** não disponível no plano atual do repositório privado; PR + CI `verify`
+  continuam obrigatórios por convenção até o repo ser público/Pro.
 
 Branch atual do tech lead: `chore/b1-status` (atualização do board). O dev sênior trabalha no
 worktree `C:\Users\victor\CRM-senior`, branch `feat/sd-02-appointments`.
