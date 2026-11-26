@@ -1,24 +1,36 @@
-import { RefreshCw } from 'lucide-react'
-import { ModulePlaceholder } from '@/components/module-placeholder'
+import { CadencesPanel } from '@/components/cadences/cadences-panel'
+import { PageHeader } from '@/components/shell/page-header'
+import { getCadences, getEnrollments, getLeads, getTemplates } from '@/lib/api'
 
 export const metadata = {
   title: 'Cadências',
 }
 
-export default function CadencesPage() {
+export default async function CadencesPage() {
+  const [cadences, templates, enrollments, leads] = await Promise.all([
+    getCadences(),
+    getTemplates(),
+    getEnrollments(),
+    getLeads({ limit: 100 }),
+  ])
+
   return (
-    <ModulePlaceholder
-      icon={RefreshCw}
-      eyebrow="Recuperação de leads"
-      title="Cadências"
-      description="Fila de elegíveis, seleção pela SDR, modelos de mensagem e motor de envio com conformidade."
-      stage="Etapa 5"
-      features={[
-        'Fila automática de leads não agendados aguardando seleção',
-        'Seleção individual, em lote ou de todos os elegíveis',
-        'Até sete dias com uma tentativa diária e horário comercial configurável',
-        'Pausa ao receber resposta, opt-out e proteção contra duplicidade',
-      ]}
-    />
+    <div className="space-y-6">
+      <PageHeader
+        eyebrow="Recuperação de leads"
+        title="Cadências"
+        description="Crie cadências com templates aprovados, inscreva leads elegíveis e acompanhe o envio assistivo."
+      />
+      <CadencesPanel
+        leads={leads.items.map((item) => ({
+          id: item.id,
+          name: item.name,
+          phone: item.phone,
+        }))}
+        cadences={cadences.items}
+        templates={templates}
+        enrollments={enrollments}
+      />
+    </div>
   )
 }
