@@ -22,16 +22,17 @@ seção. Ele não contém tokens nem segredos.
   webhook; `confidence` persistido como 0-100.
 - **B4 — Relatórios e robustez:** SD-07 em `e4667e6` (PR #39); TL-10 (health/backlog e contrato v1)
   em andamento.
-- **B5 — Meta live:** pendente de credenciais; TL-11 continua bloqueado.
-- **F — Frontend:** SD-08 em `0d50d86` (PR #41) entregou agenda, cadências, relatórios e insights;
-  TL-12 (shell final, clients e release) em andamento.
+- **B5 — Meta live:** bloqueado; faltam `WHATSAPP_APP_SECRET`, `WHATSAPP_ACCESS_TOKEN`,
+  `WHATSAPP_PHONE_NUMBER_ID` e `WHATSAPP_WABA_ID` da Meta.
+- **F — Frontend:** concluído. SD-08 em `0d50d86` (PR #41) entregou agenda, cadências,
+  relatórios e insights; TL-12 em `c7f6645` (PR #42) finalizou shell, clients e release.
 - **Proteção de `main`:** não disponível no plano atual do repositório privado; PR + CI `verify`
   continuam obrigatórios por convenção até o repo ser público/Pro.
 
-Branch atual do tech lead: `feat/f-integration`. Como o dev sênior está fora, o tech lead assumiu
-todas as tarefas; o worktree `C:\Users\victor\CRM-senior` permanece disponível.
+Branch atual do tech lead: `chore/final-status` (fechamento do board). Como o dev sênior está fora,
+o tech lead assumiu todas as tarefas; o worktree `C:\Users\victor\CRM-senior` permanece disponível.
 
-`main` local = `origin/main` em `0d50d86`. O arquivo `apps/api/.env` existe localmente, está
+`main` local = `origin/main` em `c7f6645`. O arquivo `apps/api/.env` existe localmente, está
 ignorado pelo Git e guarda a configuração live.
 
 ### O que entrou no B0
