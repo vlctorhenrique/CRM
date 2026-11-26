@@ -14,6 +14,7 @@ import {
 } from '../../db/schema/index.js'
 import { recordAudit } from '../../lib/audit.js'
 import { AppError } from '../../lib/errors.js'
+import { handleInboundAi } from '../ai/ai.hooks.js'
 import { handleInboundCadenceEffects } from '../cadences/cadence.hooks.js'
 import { sendWhatsAppText } from './whatsapp.client.js'
 
@@ -507,6 +508,10 @@ async function processInboundMessage(
   }
 
   await handleInboundCadenceEffects(db, account.tenantId, lead.id, now, optOut)
+
+  if (!optOut && stored.id) {
+    await handleInboundAi(db, config, account.tenantId, lead.id, stored.id)
+  }
 
   if (created) {
     await recordAudit(db, {
