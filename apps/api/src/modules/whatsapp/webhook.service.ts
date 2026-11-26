@@ -14,6 +14,7 @@ import {
 } from '../../db/schema/index.js'
 import { recordAudit } from '../../lib/audit.js'
 import { AppError } from '../../lib/errors.js'
+import { handleInboundCadenceEffects } from '../cadences/cadence.hooks.js'
 import { sendWhatsAppText } from './whatsapp.client.js'
 
 const messageSchema = z
@@ -504,6 +505,8 @@ async function processInboundMessage(
   if (!stored) {
     return
   }
+
+  await handleInboundCadenceEffects(db, account.tenantId, lead.id, now, optOut)
 
   if (created) {
     await recordAudit(db, {
