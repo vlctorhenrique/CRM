@@ -1,5 +1,6 @@
 import { buildApp } from './app.js'
 import { loadConfig } from './config/env.js'
+import { startAiWorker } from './modules/ai/ai.worker.js'
 import { startCadenceWorker } from './modules/cadences/cadence.worker.js'
 
 async function main(): Promise<void> {
@@ -8,11 +9,13 @@ async function main(): Promise<void> {
 
   await app.listen({ port: config.port, host: config.host })
 
-  const worker = startCadenceWorker({ db: app.db, config, log: app.log })
+  const cadenceWorker = startCadenceWorker({ db: app.db, config, log: app.log })
+  const aiWorker = startAiWorker({ db: app.db, config, log: app.log })
 
   const shutdown = async (signal: string): Promise<void> => {
     app.log.info({ signal }, 'Encerrando API')
-    await worker.stop()
+    await cadenceWorker.stop()
+    await aiWorker.stop()
     await app.close()
     process.exit(0)
   }

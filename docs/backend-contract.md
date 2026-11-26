@@ -186,8 +186,8 @@ Cancelamento usa `PATCH` com `status: "cancelled"` e `cancellationReason`.
 | POST   | `/v1/leads/:leadId/ai-insights`        | autenticado   | Enfileira extração/resumo   |
 | PATCH  | `/v1/conversations/:conversationId/ai` | admin/gerente | Liga/desliga IA na conversa |
 
-O worker de IA roda no processo da API, respeita `AI_MODE`, `AI_DAILY_LIMIT` e
-`AI_TIMEOUT_MS`, e nunca envia mensagem.
+O worker de IA roda no processo da API a cada 60s, respeita `AI_MODE`, `AI_DAILY_LIMIT` e
+`AI_TIMEOUT_MS`, e nunca envia mensagem. `AI_MODE=off` também desliga o worker.
 
 ### Relatórios
 
