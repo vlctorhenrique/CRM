@@ -15,7 +15,7 @@ cada merge. As Issues do GitHub espelham os mesmos IDs.
 | SD-03 | Dev sênior | B2: cadence CRUD, enrollment e eligibility                             | `feat/sd-03-cadence-api`   | TL-03        | #9    | review |
 | SD-04 | Dev sênior | B2: templates CRUD                                                     | `feat/sd-04-templates`     | TL-03        | #10   | review |
 | SD-05 | Dev sênior | B2: notifications e triggers                                           | `feat/sd-05-notifications` | TL-03        | #11   | todo   |
-| TL-06 | Tech lead  | B2: worker/engine, envio, retry e idempotência                         | `feat/b2-engine`           | SD-01, SD-03 | #12   | todo   |
+| TL-06 | Tech lead  | B2: worker/engine, envio, retry e idempotência                         | `feat/b2-engine`           | SD-01, SD-03 | #12   | review |
 | TL-07 | Tech lead  | B2: hooks do webhook, opt-out, pausa e cancelamento por agendamento    | `feat/b2-hooks`            | TL-06, SD-05 | #13   | todo   |
 | TL-08 | Tech lead  | B2: wiring, seed e e2e                                                 | `feat/b2-integration`      | TL-07        | #14   | todo   |
 | SD-06 | Dev sênior | B3: AI service/routes/job com fallback                                 | `feat/sd-06-ai`            | TL-03, SD-01 | #15   | todo   |

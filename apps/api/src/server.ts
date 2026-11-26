@@ -1,12 +1,18 @@
 import { buildApp } from './app.js'
 import { loadConfig } from './config/env.js'
+import { startCadenceWorker } from './modules/cadences/cadence.worker.js'
 
 async function main(): Promise<void> {
   const config = loadConfig()
   const app = await buildApp({ config })
 
+  await app.listen({ port: config.port, host: config.host })
+
+  const worker = startCadenceWorker({ db: app.db, config, log: app.log })
+
   const shutdown = async (signal: string): Promise<void> => {
     app.log.info({ signal }, 'Encerrando API')
+    await worker.stop()
     await app.close()
     process.exit(0)
   }
@@ -18,8 +24,6 @@ async function main(): Promise<void> {
   process.once('SIGTERM', () => {
     void shutdown('SIGTERM')
   })
-
-  await app.listen({ port: config.port, host: config.host })
 }
 
 main().catch((error: unknown) => {
