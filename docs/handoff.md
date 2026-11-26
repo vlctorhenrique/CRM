@@ -20,21 +20,21 @@ seção. Ele não contém tokens nem segredos.
   opt-out/resposta, notificações e seed/e2e.
 - **B3 — IA assistiva:** concluído (PRs #37–#38): insights com fallback/LLM opcional e hook no
   webhook; `confidence` persistido como 0-100.
-- **B4 — Relatórios e robustez:** SD-07 em `e4667e6` (PR #39); TL-10 (health/backlog e contrato v1)
-  em andamento.
+- **B4 — Relatórios e robustez:** concluído em `e4667e6` (PR #39) e `90adf8c` (PR #40).
 - **B5 — Meta live:** bloqueado; faltam `WHATSAPP_APP_SECRET`, `WHATSAPP_ACCESS_TOKEN`,
   `WHATSAPP_PHONE_NUMBER_ID` e `WHATSAPP_WABA_ID` da Meta.
 - **F — Frontend:** concluído. SD-08 em `0d50d86` (PR #41) entregou agenda, cadências,
   relatórios e insights; TL-12 em `c7f6645` (PR #42) finalizou shell, clients e release.
 - **Pós-release:** PR #44 ligou o worker de IA no servidor; #45 entregou página de notificações;
-  #46 adicionou filtro de período nos relatórios. `main` em `4290f39`, `verify` e `test:e2e` verdes.
+  #46 adicionou filtro de período nos relatórios; #47 atualizou handoff/README; #48 sincronizou o
+  board. `verify` e `test:e2e` verdes.
 - **Proteção de `main`:** não disponível no plano atual do repositório privado; PR + CI `verify`
   continuam obrigatórios por convenção até o repo ser público/Pro.
 
-Branch atual do tech lead: `chore/final-status` (fechamento do board). Como o dev sênior está fora,
+Branch atual do tech lead: `docs/board-sync` (sincronização do board). Como o dev sênior está fora,
 o tech lead assumiu todas as tarefas; o worktree `C:\Users\victor\CRM-senior` permanece disponível.
 
-`main` local = `origin/main` em `4290f39`. O arquivo `apps/api/.env` existe localmente, está
+`main` local = `origin/main` em `3fdd561`. O arquivo `apps/api/.env` existe localmente, está
 ignorado pelo Git e guarda a configuração live.
 
 ### O que entrou no B0
