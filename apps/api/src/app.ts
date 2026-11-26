@@ -14,6 +14,7 @@ import { createRedis } from './db/redis.js'
 import { AppError } from './lib/errors.js'
 import { registerAppointmentRoutes } from './modules/appointments/appointments.routes.js'
 import { registerAuthRoutes } from './modules/auth/auth.routes.js'
+import { registerCadenceRoutes } from './modules/cadences/cadences.routes.js'
 import { registerConversationRoutes } from './modules/conversations/conversations.routes.js'
 import { registerDashboardRoutes } from './modules/dashboard/dashboard.routes.js'
 import { registerDevRoutes } from './modules/dev/dev.routes.js'
@@ -168,6 +169,7 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   await registerUsersRoutes(app)
   await registerTenantRoutes(app)
   await registerTemplateRoutes(app)
+  await registerCadenceRoutes(app)
   await registerLeadRoutes(app)
   await registerAppointmentRoutes(app)
   await registerConversationRoutes(app)
