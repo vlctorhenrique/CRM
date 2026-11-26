@@ -22,15 +22,16 @@ seção. Ele não contém tokens nem segredos.
   webhook; `confidence` persistido como 0-100.
 - **B4 — Relatórios e robustez:** SD-07 em `e4667e6` (PR #39); TL-10 (health/backlog e contrato v1)
   em andamento.
-- **B5 — Meta live:** pendente de credenciais.
-- **F — Frontend:** pendente; páginas atuais são placeholders.
+- **B5 — Meta live:** pendente de credenciais; TL-11 continua bloqueado.
+- **F — Frontend:** SD-08 em `0d50d86` (PR #41) entregou agenda, cadências, relatórios e insights;
+  TL-12 (shell final, clients e release) em andamento.
 - **Proteção de `main`:** não disponível no plano atual do repositório privado; PR + CI `verify`
   continuam obrigatórios por convenção até o repo ser público/Pro.
 
-Branch atual do tech lead: `chore/b4-freeze`. Como o dev sênior está fora, o tech lead assumiu
+Branch atual do tech lead: `feat/f-integration`. Como o dev sênior está fora, o tech lead assumiu
 todas as tarefas; o worktree `C:\Users\victor\CRM-senior` permanece disponível.
 
-`main` local = `origin/main` em `e4667e6`. O arquivo `apps/api/.env` existe localmente, está
+`main` local = `origin/main` em `0d50d86`. O arquivo `apps/api/.env` existe localmente, está
 ignorado pelo Git e guarda a configuração live.
 
 ### O que entrou no B0
