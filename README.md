@@ -2,7 +2,7 @@
 
 CRM comercial para clínicas de estética e emagrecimento, construído a partir do PRD v1.1. O produto começa com uma clínica, mas nasce preparado para operação multiempresa.
 
-**Status atual: Etapa 2 — CRM e WhatsApp concluída.**
+**Status atual: B1–B4 e frontend entregues; integração live da Meta pendente de credenciais.**
 
 ## O que já existe
 
@@ -13,7 +13,14 @@ CRM comercial para clínicas de estética e emagrecimento, construído a partir 
 - RBAC com administrador, gerente e SDR.
 - Trilha de auditoria para login, logout, troca de senha e gestão de usuários/clínica.
 - Troca de senha pelo próprio usuário, com revogação das outras sessões.
-- Dashboard, shell responsivo, tela de equipe e roadmap dos módulos.
+- Dashboard, shell responsivo, tela de equipe e navegação entre todos os módulos.
+- Fila de não atribuídos, claim/release de leads e consentimento explícito com evidência.
+- Agendamentos manuais com RBAC, conflito de horário, transições de status e notificações.
+- Templates com variáveis validadas, cadências com inscrição elegível e worker no processo da API.
+- Limites de horário comercial, retry com backoff, opt-out e pausa por resposta humana.
+- IA assistiva silenciosa com fallback determinístico e LLM opcional (`AI_MODE`).
+- Relatórios de funil, agenda, cadências e mensagens, além de health com backlog.
+- Páginas de agenda, cadências, relatórios e insights de IA no detalhe do lead.
 - Leads com cadastro manual, deduplicação por telefone, filtros, responsável e pipeline de status.
 - Recebimento pela WhatsApp Cloud API oficial com validação de assinatura HMAC e idempotência.
 - Criação automática de lead e conversa, primeiro atendimento configurável e histórico de mensagens.

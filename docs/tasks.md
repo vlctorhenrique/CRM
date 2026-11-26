@@ -24,7 +24,7 @@ cada merge. As Issues do GitHub espelham os mesmos IDs.
 | TL-10 | Tech lead  | B4: health/backlog/robustez, contrato v1 e handoff                     | `chore/b4-freeze`          | TL-09, SD-07 | #18   | review |
 | TL-11 | Tech lead  | B5: Meta live e staging                                                | `feat/b5-meta`             | TL-10        | #19   | todo   |
 | SD-08 | Dev sênior | F: agenda, cadências, relatórios e adições de leads                    | `feat/sd-08-pages`         | TL-10        | #20   | review |
-| TL-12 | Tech lead  | F: shell, clients, e2e final e release                                 | `feat/f-integration`       | TL-11, SD-08 | #21   | todo   |
+| TL-12 | Tech lead  | F: shell, clients, e2e final e release                                 | `feat/f-integration`       | TL-11, SD-08 | #21   | review |
 
 ## Observações
 

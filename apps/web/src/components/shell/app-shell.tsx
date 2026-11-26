@@ -27,9 +27,9 @@ const navigation = [
   { href: '/dashboard', label: 'Visão geral', icon: LayoutDashboard },
   { href: '/leads', label: 'Leads', icon: Users },
   { href: '/conversas', label: 'Conversas', icon: MessageSquare },
-  { href: '/cadencias', label: 'Cadências', icon: RefreshCw, phase: 'Etapa 5' },
-  { href: '/agenda', label: 'Agenda', icon: CalendarDays, phase: 'Etapa 4' },
-  { href: '/relatorios', label: 'Relatórios', icon: BarChart3, phase: 'Etapa 6' },
+  { href: '/cadencias', label: 'Cadências', icon: RefreshCw },
+  { href: '/agenda', label: 'Agenda', icon: CalendarDays },
+  { href: '/relatorios', label: 'Relatórios', icon: BarChart3 },
   { href: '/configuracoes', label: 'Configurações', icon: Settings },
 ]
 
@@ -108,16 +108,6 @@ export function AppShell({ session, children }: { session: MeResponse; children:
                 aria-hidden="true"
               />
               <span className="flex-1">{item.label}</span>
-              {item.phase ? (
-                <span
-                  className={cn(
-                    'rounded-md px-1.5 py-0.5 text-[10px] font-semibold',
-                    isActive ? 'bg-white/15 text-white' : 'bg-surface text-muted ring-1 ring-line',
-                  )}
-                >
-                  {item.phase}
-                </span>
-              ) : null}
             </Link>
           )
         })}
