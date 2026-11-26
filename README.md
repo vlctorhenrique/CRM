@@ -20,7 +20,7 @@ CRM comercial para clínicas de estética e emagrecimento, construído a partir 
 - Limites de horário comercial, retry com backoff, opt-out e pausa por resposta humana.
 - IA assistiva silenciosa com fallback determinístico e LLM opcional (`AI_MODE`).
 - Relatórios de funil, agenda, cadências e mensagens, além de health com backlog.
-- Páginas de agenda, cadências, relatórios e insights de IA no detalhe do lead.
+- Páginas de agenda, cadências, relatórios, notificações e insights de IA no detalhe do lead.
 - Leads com cadastro manual, deduplicação por telefone, filtros, responsável e pipeline de status.
 - Recebimento pela WhatsApp Cloud API oficial com validação de assinatura HMAC e idempotência.
 - Criação automática de lead e conversa, primeiro atendimento configurável e histórico de mensagens.

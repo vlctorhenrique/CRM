@@ -26,13 +26,15 @@ seção. Ele não contém tokens nem segredos.
   `WHATSAPP_PHONE_NUMBER_ID` e `WHATSAPP_WABA_ID` da Meta.
 - **F — Frontend:** concluído. SD-08 em `0d50d86` (PR #41) entregou agenda, cadências,
   relatórios e insights; TL-12 em `c7f6645` (PR #42) finalizou shell, clients e release.
+- **Pós-release:** PR #44 ligou o worker de IA no servidor; #45 entregou página de notificações;
+  #46 adicionou filtro de período nos relatórios. `main` em `4290f39`, `verify` e `test:e2e` verdes.
 - **Proteção de `main`:** não disponível no plano atual do repositório privado; PR + CI `verify`
   continuam obrigatórios por convenção até o repo ser público/Pro.
 
 Branch atual do tech lead: `chore/final-status` (fechamento do board). Como o dev sênior está fora,
 o tech lead assumiu todas as tarefas; o worktree `C:\Users\victor\CRM-senior` permanece disponível.
 
-`main` local = `origin/main` em `c7f6645`. O arquivo `apps/api/.env` existe localmente, está
+`main` local = `origin/main` em `4290f39`. O arquivo `apps/api/.env` existe localmente, está
 ignorado pelo Git e guarda a configuração live.
 
 ### O que entrou no B0
