@@ -143,5 +143,75 @@ describe('fluxo headless', () => {
       headers: { cookie },
     })
     expect(finalDashboard.json().scheduled).toBeGreaterThanOrEqual(1)
+
+    const second = await context.app.inject({
+      method: 'POST',
+      url: '/v1/dev/simulate-inbound',
+      headers: { cookie },
+      payload: {
+        phone: '11977776666',
+        name: 'Bianca E2E',
+        text: 'Quero saber sobre preenchimento',
+      },
+    })
+    const secondId = second.json().leadId as string
+
+    const consent = await context.app.inject({
+      method: 'POST',
+      url: `/v1/leads/${secondId}/consent`,
+      headers: { cookie },
+      payload: { status: 'granted', evidence: 'Contato no simulador', textVersion: 'v1' },
+    })
+    expect(consent.statusCode).toBe(200)
+
+    const template = await context.app.inject({
+      method: 'POST',
+      url: '/v1/templates',
+      headers: { cookie },
+      payload: { name: 'E2E', body: 'Olá {{nome}}, tudo bem?' },
+    })
+    const templateId = template.json().template.id as string
+    await context.app.inject({
+      method: 'PATCH',
+      url: `/v1/templates/${templateId}`,
+      headers: { cookie },
+      payload: { status: 'approved' },
+    })
+
+    const cadence = await context.app.inject({
+      method: 'POST',
+      url: '/v1/cadences',
+      headers: { cookie },
+      payload: { name: 'E2E Cadence', steps: [{ templateId, delayHours: 24 }] },
+    })
+    const cadenceId = cadence.json().cadence.id as string
+    await context.app.inject({
+      method: 'PATCH',
+      url: `/v1/cadences/${cadenceId}`,
+      headers: { cookie },
+      payload: { status: 'active' },
+    })
+
+    const enrolled = await context.app.inject({
+      method: 'POST',
+      url: `/v1/cadences/${cadenceId}/enroll`,
+      headers: { cookie },
+      payload: { leadId: secondId },
+    })
+    expect(enrolled.statusCode).toBe(201)
+
+    const enrollments = await context.app.inject({
+      method: 'GET',
+      url: `/v1/cadence-enrollments?leadId=${secondId}`,
+      headers: { cookie },
+    })
+    expect(enrollments.json().total).toBe(1)
+
+    const notifications = await context.app.inject({
+      method: 'GET',
+      url: '/v1/notifications',
+      headers: { cookie },
+    })
+    expect(notifications.statusCode).toBe(200)
   })
 })

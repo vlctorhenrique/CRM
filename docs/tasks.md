@@ -17,7 +17,7 @@ cada merge. As Issues do GitHub espelham os mesmos IDs.
 | SD-05 | Dev sênior | B2: notifications e triggers                                           | `feat/sd-05-notifications` | TL-03        | #11   | todo   |
 | TL-06 | Tech lead  | B2: worker/engine, envio, retry e idempotência                         | `feat/b2-engine`           | SD-01, SD-03 | #12   | review |
 | TL-07 | Tech lead  | B2: hooks do webhook, opt-out, pausa e cancelamento por agendamento    | `feat/b2-hooks`            | TL-06, SD-05 | #13   | review |
-| TL-08 | Tech lead  | B2: wiring, seed e e2e                                                 | `feat/b2-integration`      | TL-07        | #14   | todo   |
+| TL-08 | Tech lead  | B2: wiring, seed e e2e                                                 | `feat/b2-integration`      | TL-07        | #14   | review |
 | SD-06 | Dev sênior | B3: AI service/routes/job com fallback                                 | `feat/sd-06-ai`            | TL-03, SD-01 | #15   | todo   |
 | TL-09 | Tech lead  | B3: hook do webhook e flags de IA                                      | `feat/b3-hook`             | SD-06        | #16   | todo   |
 | SD-07 | Dev sênior | B4: reports service/routes                                             | `feat/sd-07-reports`       | TL-08        | #17   | todo   |
