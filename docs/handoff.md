@@ -31,11 +31,11 @@ seção. Ele não contém tokens nem segredos.
 - **Proteção de `main`:** não disponível no plano atual do repositório privado; PR + CI `verify`
   continuam obrigatórios por convenção até o repo ser público/Pro.
 
-Branch atual do tech lead: `docs/board-sync` (sincronização do board). Como o dev sênior está fora,
-o tech lead assumiu todas as tarefas; o worktree `C:\Users\victor\CRM-senior` permanece disponível.
+Branch atual do tech lead: `main`. Como o dev sênior está fora, o tech lead assumiu todas as
+tarefas; o worktree `C:\Users\victor\CRM-senior` permanece disponível.
 
-`main` local = `origin/main` em `3fdd561`. O arquivo `apps/api/.env` existe localmente, está
-ignorado pelo Git e guarda a configuração live.
+`main` local = `origin/main`, sincronizada após o PR #48. O arquivo `apps/api/.env` existe
+localmente, está ignorado pelo Git e guarda a configuração live.
 
 ### O que entrou no B0
 
