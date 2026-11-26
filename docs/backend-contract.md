@@ -1,6 +1,6 @@
-# Contrato backend v0
+# Contrato backend v1
 
-Versão: 2026-11. Owner: tech lead. Mudanças neste arquivo e em `packages/shared` são
+Versão: 1.0 — 2026-11. Owner: tech lead. Mudanças neste arquivo e em `packages/shared` são
 centralizadas no tech lead.
 
 ## Regras gerais
@@ -208,6 +208,15 @@ Filtros: `from`, `to`, `ownerUserId`. SDR vê apenas os próprios dados.
 Body: `{ "phone": "...", "name?": "...", "text": "..." }`. Retorna `processed`, `ignored`,
 `leadId`.
 
+### Sistema
+
+| Método | Rota      | Permissão | Descrição                                                           |
+| ------ | --------- | --------- | ------------------------------------------------------------------- |
+| GET    | `/health` | pública   | Status de database/redis e backlog de `cadence_tasks`/`ai_insights` |
+
+`backlog` expõe `cadenceTasksPending`, `cadenceTasksStale` (locked sem atualização por 60s) e
+`aiInsightsPending`.
+
 ## Worker de cadências
 
 - Intervalo: `CADENCE_WORKER_INTERVAL_MS`; desligável com `CADENCE_WORKER_ENABLED=false`.
@@ -263,4 +272,5 @@ Body: `{ "phone": "...", "name?": "...", "text": "..." }`. Retorna `processed`, 
 - B2: cadência ativa envia uma vez por passo, respeita horário/opt-out, retry e conclusão;
   templates validam variáveis; notificações criadas.
 - B3: IA silenciosa e idempotente, fallback sem rede, LLM opcional; nenhum envio automático.
-- B4: relatórios filtram tenant/período; health expõe backlog do worker; contrato v1.
+- B4: relatórios filtram tenant/período/responsável; health expõe backlog do worker; contrato v1
+  publicado; handoff atualizado.

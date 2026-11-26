@@ -21,6 +21,11 @@ describe('saúde e erros da API', () => {
       redis: 'disabled',
     })
     expect(response.json().status).toBe('ok')
+    expect(response.json().backlog).toEqual({
+      cadenceTasksPending: 0,
+      cadenceTasksStale: 0,
+      aiInsightsPending: 0,
+    })
   })
 
   it('retorna 404 em formato padronizado', async () => {

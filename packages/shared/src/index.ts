@@ -180,6 +180,11 @@ export interface HealthResponse {
     database: 'ok' | 'error'
     redis: 'ok' | 'disabled' | 'error'
   }
+  backlog?: {
+    cadenceTasksPending: number
+    cadenceTasksStale: number
+    aiInsightsPending: number
+  }
   timestamp: string
 }
 
