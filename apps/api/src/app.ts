@@ -22,6 +22,7 @@ import { registerDevRoutes } from './modules/dev/dev.routes.js'
 import { registerHealthRoutes } from './modules/health/health.routes.js'
 import { registerLeadRoutes } from './modules/leads/leads.routes.js'
 import { registerNotificationRoutes } from './modules/notifications/notifications.routes.js'
+import { registerReportRoutes } from './modules/reports/reports.routes.js'
 import { registerTemplateRoutes } from './modules/templates/templates.routes.js'
 import { registerTenantRoutes } from './modules/tenants/tenants.routes.js'
 import { registerUsersRoutes } from './modules/users/users.routes.js'
@@ -171,6 +172,7 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   await registerUsersRoutes(app)
   await registerTenantRoutes(app)
   await registerTemplateRoutes(app)
+  await registerReportRoutes(app)
   await registerAiRoutes(app)
   await registerCadenceRoutes(app)
   await registerLeadRoutes(app)
