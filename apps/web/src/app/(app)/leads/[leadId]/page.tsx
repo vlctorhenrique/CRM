@@ -4,15 +4,17 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { LeadWorkspace } from '@/components/leads/lead-workspace'
 import { Badge } from '@/components/ui/badge'
-import { getLeadDetails, getSession, getTeamMembers } from '@/lib/api'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { getAiInsights, getLeadDetails, getSession, getTeamMembers } from '@/lib/api'
 import { leadStatusTone } from '@/lib/presentation'
 
 export default async function LeadDetailPage({ params }: { params: Promise<{ leadId: string }> }) {
   const { leadId } = await params
-  const [session, detail, team] = await Promise.all([
+  const [session, detail, team, insights] = await Promise.all([
     getSession(),
     getLeadDetails(leadId),
     getTeamMembers(),
+    getAiInsights(leadId),
   ])
 
   if (!session) return null
@@ -76,6 +78,34 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ lea
             </p>
           </div>
         </div>
+      ) : null}
+
+      {insights.length > 0 ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>Insights de IA</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {insights.map((insight) => (
+              <div key={insight.id} className="rounded-xl border border-line bg-surface-muted p-4">
+                <div className="flex items-center justify-between gap-3">
+                  <Badge tone={insight.status === 'completed' ? 'success' : 'sand'}>
+                    {insight.status}
+                  </Badge>
+                  <span className="text-xs text-muted">
+                    {insight.confidence !== null ? `${insight.confidence}%` : '—'}
+                    {insight.model ? ` · ${insight.model}` : ''}
+                  </span>
+                </div>
+                {insight.result ? (
+                  <p className="mt-2 text-sm text-ink-soft">
+                    {String(insight.result.summary ?? 'Resumo indisponível')}
+                  </p>
+                ) : null}
+              </div>
+            ))}
+          </CardContent>
+        </Card>
       ) : null}
 
       <LeadWorkspace

@@ -1,6 +1,10 @@
 import 'server-only'
 import type {
+  AiInsightView,
+  AppointmentListResponse,
   AuthUser,
+  CadenceEnrollmentView,
+  CadenceListResponse,
   ConversationListResponse,
   DashboardSummary,
   HealthResponse,
@@ -8,6 +12,9 @@ import type {
   LeadListResponse,
   LeadStatus,
   MeResponse,
+  MessageTemplateView,
+  NotificationListResponse,
+  ReportsSummary,
   WhatsAppAccountView,
 } from '@crm/shared'
 import { cookies } from 'next/headers'
@@ -101,6 +108,63 @@ export async function getWhatsAppAccount(): Promise<WhatsAppAccountView | null> 
 
 export async function getDashboardSummary(): Promise<DashboardSummary | null> {
   return authorizedGet<DashboardSummary>('/v1/dashboard/summary')
+}
+
+export async function getAppointments(params: {
+  from?: string | undefined
+  to?: string | undefined
+  status?: string | undefined
+}): Promise<AppointmentListResponse> {
+  const query = new URLSearchParams()
+  if (params.from) query.set('from', params.from)
+  if (params.to) query.set('to', params.to)
+  if (params.status) query.set('status', params.status)
+  query.set('limit', '200')
+
+  const data = await authorizedGet<AppointmentListResponse>(`/v1/appointments?${query.toString()}`)
+  return data ?? { items: [], total: 0 }
+}
+
+export async function getCadences(): Promise<CadenceListResponse> {
+  const data = await authorizedGet<CadenceListResponse>('/v1/cadences?limit=100')
+  return data ?? { items: [], total: 0 }
+}
+
+export async function getTemplates(): Promise<MessageTemplateView[]> {
+  const data = await authorizedGet<{ items: MessageTemplateView[] }>('/v1/templates?limit=100')
+  return data?.items ?? []
+}
+
+export async function getEnrollments(
+  params: { leadId?: string | undefined } = {},
+): Promise<CadenceEnrollmentView[]> {
+  const query = new URLSearchParams()
+  if (params.leadId) query.set('leadId', params.leadId)
+  query.set('limit', '100')
+  const data = await authorizedGet<{ items: CadenceEnrollmentView[] }>(
+    `/v1/cadence-enrollments?${query.toString()}`,
+  )
+  return data?.items ?? []
+}
+
+export async function getReports(filters: {
+  from?: string | undefined
+  to?: string | undefined
+}): Promise<ReportsSummary | null> {
+  const query = new URLSearchParams()
+  if (filters.from) query.set('from', filters.from)
+  if (filters.to) query.set('to', filters.to)
+  return authorizedGet<ReportsSummary>(`/v1/reports/summary?${query.toString()}`)
+}
+
+export async function getNotifications(): Promise<NotificationListResponse> {
+  const data = await authorizedGet<NotificationListResponse>('/v1/notifications?limit=10')
+  return data ?? { items: [], total: 0, unreadCount: 0 }
+}
+
+export async function getAiInsights(leadId: string): Promise<AiInsightView[]> {
+  const data = await authorizedGet<{ insights: AiInsightView[] }>(`/v1/leads/${leadId}/ai-insights`)
+  return data?.insights ?? []
 }
 
 export async function getHealth(): Promise<HealthResponse | null> {

@@ -1,24 +1,29 @@
-import { CalendarDays } from 'lucide-react'
-import { ModulePlaceholder } from '@/components/module-placeholder'
+import { AppointmentsPanel } from '@/components/appointments/appointments-panel'
+import { PageHeader } from '@/components/shell/page-header'
+import { getAppointments, getLeads } from '@/lib/api'
 
 export const metadata = {
   title: 'Agenda',
 }
 
-export default function AgendaPage() {
+export default async function AgendaPage() {
+  const [appointments, leads] = await Promise.all([getAppointments({}), getLeads({ limit: 100 })])
+
   return (
-    <ModulePlaceholder
-      icon={CalendarDays}
-      eyebrow="Agendamentos"
-      title="Agenda"
-      description="Registro manual do agendamento feito no sistema atual da clínica, preparado para uma agenda nativa futura."
-      stage="Etapa 4"
-      features={[
-        'Registro manual de data, horário, unidade e profissional',
-        'Marcação de agendamento com cancelamento automático das cadências',
-        'Observações e histórico vinculados ao lead',
-        'Modelo de dados preparado para agenda nativa, sem integração com o UNO no MVP',
-      ]}
-    />
+    <div className="space-y-6">
+      <PageHeader
+        eyebrow="Agendamentos"
+        title="Agenda"
+        description="Registre e acompanhe os agendamentos feitos no sistema da clínica."
+      />
+      <AppointmentsPanel
+        leads={leads.items.map((item) => ({
+          id: item.id,
+          name: item.name,
+          phone: item.phone,
+        }))}
+        appointments={appointments.items}
+      />
+    </div>
   )
 }
