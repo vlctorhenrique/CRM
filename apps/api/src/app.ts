@@ -15,6 +15,7 @@ import { AppError } from './lib/errors.js'
 import { registerAuthRoutes } from './modules/auth/auth.routes.js'
 import { registerConversationRoutes } from './modules/conversations/conversations.routes.js'
 import { registerDashboardRoutes } from './modules/dashboard/dashboard.routes.js'
+import { registerDevRoutes } from './modules/dev/dev.routes.js'
 import { registerHealthRoutes } from './modules/health/health.routes.js'
 import { registerLeadRoutes } from './modules/leads/leads.routes.js'
 import { registerTenantRoutes } from './modules/tenants/tenants.routes.js'
@@ -169,6 +170,7 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   await registerDashboardRoutes(app)
   await registerWhatsAppRoutes(app)
   await registerWhatsAppWebhookRoutes(app)
+  await registerDevRoutes(app)
 
   if (config.enableApiDocs) {
     await app.register(swaggerUi, {

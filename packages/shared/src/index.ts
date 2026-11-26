@@ -271,6 +271,105 @@ export const CONSENT_STATUS_LABELS: Record<ConsentStatus, string> = {
   revoked: 'Revogado',
 }
 
+export const DEFAULT_CONSENT_TEXT_VERSION = '2026-11-v1'
+
+export const APPOINTMENT_STATUSES = [
+  'scheduled',
+  'confirmed',
+  'completed',
+  'cancelled',
+  'no_show',
+] as const
+
+export type AppointmentStatus = (typeof APPOINTMENT_STATUSES)[number]
+
+export const APPOINTMENT_STATUS_LABELS: Record<AppointmentStatus, string> = {
+  scheduled: 'Agendado',
+  confirmed: 'Confirmado',
+  completed: 'Compareceu',
+  cancelled: 'Cancelado',
+  no_show: 'Não compareceu',
+}
+
+export const CADENCE_STATUSES = ['draft', 'active', 'paused', 'archived'] as const
+export type CadenceStatus = (typeof CADENCE_STATUSES)[number]
+
+export const CADENCE_STATUS_LABELS: Record<CadenceStatus, string> = {
+  draft: 'Rascunho',
+  active: 'Ativa',
+  paused: 'Pausada',
+  archived: 'Arquivada',
+}
+
+export const CADENCE_ENROLLMENT_STATUSES = [
+  'active',
+  'paused',
+  'completed',
+  'cancelled',
+  'failed',
+] as const
+
+export type CadenceEnrollmentStatus = (typeof CADENCE_ENROLLMENT_STATUSES)[number]
+
+export const CADENCE_ENROLLMENT_STATUS_LABELS: Record<CadenceEnrollmentStatus, string> = {
+  active: 'Ativa',
+  paused: 'Pausada',
+  completed: 'Concluída',
+  cancelled: 'Cancelada',
+  failed: 'Falhou',
+}
+
+export const CADENCE_TASK_STATUSES = [
+  'pending',
+  'processing',
+  'sent',
+  'skipped',
+  'failed',
+  'cancelled',
+] as const
+
+export type CadenceTaskStatus = (typeof CADENCE_TASK_STATUSES)[number]
+
+export const TEMPLATE_STATUSES = ['draft', 'pending', 'approved', 'rejected', 'paused'] as const
+export type TemplateStatus = (typeof TEMPLATE_STATUSES)[number]
+
+export const TEMPLATE_STATUS_LABELS: Record<TemplateStatus, string> = {
+  draft: 'Rascunho',
+  pending: 'Em aprovação',
+  approved: 'Aprovado',
+  rejected: 'Rejeitado',
+  paused: 'Pausado',
+}
+
+export const TEMPLATE_CATEGORIES = ['marketing', 'utility'] as const
+export type TemplateCategory = (typeof TEMPLATE_CATEGORIES)[number]
+
+export const TEMPLATE_CATEGORY_LABELS: Record<TemplateCategory, string> = {
+  marketing: 'Marketing',
+  utility: 'Utilidade',
+}
+
+export const NOTIFICATION_TYPES = [
+  'lead_assigned',
+  'appointment_created',
+  'appointment_cancelled',
+  'cadence_completed',
+  'cadence_failed',
+  'ai_insight',
+  'system',
+] as const
+
+export type NotificationType = (typeof NOTIFICATION_TYPES)[number]
+
+export const AI_MODES = ['off', 'fallback', 'llm'] as const
+export type AiMode = (typeof AI_MODES)[number]
+
+export const AI_INSIGHT_TYPES = ['extraction', 'summary', 'classification'] as const
+export type AiInsightType = (typeof AI_INSIGHT_TYPES)[number]
+
+export const AI_INSIGHT_STATUSES = ['pending', 'processing', 'completed', 'failed'] as const
+export type AiInsightStatus = (typeof AI_INSIGHT_STATUSES)[number]
+
 export const MESSAGE_DIRECTIONS = ['inbound', 'outbound'] as const
 
 export type MessageDirection = (typeof MESSAGE_DIRECTIONS)[number]
@@ -409,6 +508,171 @@ export const updateWhatsAppAccountSchema = z
 
 export type UpdateWhatsAppAccountInput = z.infer<typeof updateWhatsAppAccountSchema>
 
+export const consentLeadSchema = z.object({
+  status: z.enum(['granted', 'revoked']),
+  evidence: z.string().trim().min(3, 'Registre a evidência do consentimento').max(2000),
+  textVersion: z.string().trim().min(1, 'Informe a versão do texto').max(80),
+})
+
+export type ConsentLeadInput = z.infer<typeof consentLeadSchema>
+
+export const appointmentStatusSchema = z.enum(APPOINTMENT_STATUSES)
+
+export const listAppointmentsQuerySchema = z.object({
+  from: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .optional(),
+  to: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .optional(),
+  status: appointmentStatusSchema.optional(),
+  leadId: z.uuid().optional(),
+  limit: z.coerce.number().int().min(1).max(200).default(100),
+  offset: z.coerce.number().int().min(0).default(0),
+})
+
+export type ListAppointmentsQuery = z.infer<typeof listAppointmentsQuerySchema>
+
+export const createAppointmentSchema = z.object({
+  leadId: z.uuid(),
+  scheduledAt: z.string().datetime({ offset: true }),
+  durationMinutes: z.coerce.number().int().min(15).max(480).default(60),
+  procedure: z.string().trim().max(120).optional(),
+  notes: z.string().trim().max(1000).optional(),
+  ownerUserId: z.uuid().nullable().optional(),
+})
+
+export type CreateAppointmentInput = z.infer<typeof createAppointmentSchema>
+
+export const updateAppointmentSchema = z
+  .object({
+    status: appointmentStatusSchema.optional(),
+    scheduledAt: z.string().datetime({ offset: true }).optional(),
+    durationMinutes: z.coerce.number().int().min(15).max(480).optional(),
+    procedure: z.string().trim().max(120).nullable().optional(),
+    notes: z.string().trim().max(1000).nullable().optional(),
+    ownerUserId: z.uuid().nullable().optional(),
+    cancellationReason: z.string().trim().max(500).nullable().optional(),
+  })
+  .refine((value) => Object.keys(value).length > 0, {
+    message: 'Informe ao menos um campo para atualizar',
+  })
+
+export type UpdateAppointmentInput = z.infer<typeof updateAppointmentSchema>
+
+export const createTemplateSchema = z.object({
+  name: z.string().trim().min(2, 'Informe o nome').max(120),
+  category: z.enum(TEMPLATE_CATEGORIES).default('marketing'),
+  language: z
+    .string()
+    .trim()
+    .regex(/^[a-z]{2}(?:_[A-Z]{2})?$/, 'Use o formato pt_BR')
+    .default('pt_BR'),
+  body: z.string().trim().min(1, 'Escreva o conteúdo').max(1024),
+})
+
+export type CreateTemplateInput = z.infer<typeof createTemplateSchema>
+
+export const updateTemplateSchema = z
+  .object({
+    name: z.string().trim().min(2).max(120).optional(),
+    category: z.enum(TEMPLATE_CATEGORIES).optional(),
+    language: z
+      .string()
+      .trim()
+      .regex(/^[a-z]{2}(?:_[A-Z]{2})?$/)
+      .optional(),
+    body: z.string().trim().min(1).max(1024).optional(),
+    status: z.enum(TEMPLATE_STATUSES).optional(),
+  })
+  .refine((value) => Object.keys(value).length > 0, {
+    message: 'Informe ao menos um campo para atualizar',
+  })
+
+export type UpdateTemplateInput = z.infer<typeof updateTemplateSchema>
+
+export const cadenceStepInputSchema = z.object({
+  templateId: z.uuid(),
+  delayHours: z.coerce
+    .number()
+    .int()
+    .min(0)
+    .max(24 * 14),
+})
+
+export const createCadenceSchema = z.object({
+  name: z.string().trim().min(2, 'Informe o nome').max(120),
+  description: z.string().trim().max(500).optional(),
+  steps: z.array(cadenceStepInputSchema).min(1, 'Adicione ao menos um passo').max(20),
+})
+
+export type CreateCadenceInput = z.infer<typeof createCadenceSchema>
+
+export const updateCadenceSchema = z
+  .object({
+    name: z.string().trim().min(2).max(120).optional(),
+    description: z.string().trim().max(500).nullable().optional(),
+    status: z.enum(CADENCE_STATUSES).optional(),
+    steps: z.array(cadenceStepInputSchema).min(1).max(20).optional(),
+  })
+  .refine((value) => Object.keys(value).length > 0, {
+    message: 'Informe ao menos um campo para atualizar',
+  })
+
+export type UpdateCadenceInput = z.infer<typeof updateCadenceSchema>
+
+export const enrollLeadSchema = z.object({
+  leadId: z.uuid(),
+  cadenceId: z.uuid(),
+})
+
+export type EnrollLeadInput = z.infer<typeof enrollLeadSchema>
+
+export const updateCadenceEnrollmentSchema = z
+  .object({
+    status: z.enum(['active', 'paused', 'cancelled']),
+    reason: z.string().trim().max(500).optional(),
+  })
+  .refine((value) => value.status !== 'cancelled' || Boolean(value.reason?.trim()), {
+    message: 'Informe o motivo do cancelamento',
+    path: ['reason'],
+  })
+
+export type UpdateCadenceEnrollmentInput = z.infer<typeof updateCadenceEnrollmentSchema>
+
+export const listNotificationsQuerySchema = z.object({
+  unreadOnly: z
+    .enum(['true', 'false'])
+    .transform((value) => value === 'true')
+    .optional(),
+  limit: z.coerce.number().int().min(1).max(100).default(30),
+  offset: z.coerce.number().int().min(0).default(0),
+})
+
+export type ListNotificationsQuery = z.infer<typeof listNotificationsQuerySchema>
+
+export const markNotificationsReadSchema = z.object({
+  ids: z.array(z.uuid()).min(1).max(100),
+})
+
+export type MarkNotificationsReadInput = z.infer<typeof markNotificationsReadSchema>
+
+export const listReportsQuerySchema = z.object({
+  from: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .optional(),
+  to: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .optional(),
+  ownerUserId: z.uuid().optional(),
+})
+
+export type ListReportsQuery = z.infer<typeof listReportsQuerySchema>
+
 export interface LeadListItem {
   id: string
   name: string | null
@@ -528,4 +792,154 @@ export interface DashboardSummary {
   unreadConversations: number
   messagesSentToday: number
   conversionRate: number
+}
+
+export interface AppointmentView {
+  id: string
+  leadId: string
+  leadName: string | null
+  phone: string
+  procedure: string | null
+  scheduledAt: string
+  durationMinutes: number
+  status: AppointmentStatus
+  notes: string | null
+  ownerUserId: string | null
+  ownerName: string | null
+  createdByUserId: string | null
+  cancellationReason: string | null
+  cancelledAt: string | null
+  createdAt: string
+  updatedAt: string
+}
+
+export interface AppointmentListResponse {
+  items: AppointmentView[]
+  total: number
+}
+
+export interface MessageTemplateView {
+  id: string
+  name: string
+  category: TemplateCategory
+  language: string
+  body: string
+  variables: string[]
+  status: TemplateStatus
+  metaTemplateId: string | null
+  rejectionReason: string | null
+  createdAt: string
+  updatedAt: string
+}
+
+export interface TemplateListResponse {
+  items: MessageTemplateView[]
+  total: number
+}
+
+export interface CadenceStepView {
+  id: string
+  position: number
+  delayHours: number
+  templateId: string
+  templateName: string
+  templateStatus: TemplateStatus
+}
+
+export interface CadenceView {
+  id: string
+  name: string
+  description: string | null
+  status: CadenceStatus
+  steps: CadenceStepView[]
+  activeEnrollments: number
+  createdAt: string
+  updatedAt: string
+}
+
+export interface CadenceListResponse {
+  items: CadenceView[]
+  total: number
+}
+
+export interface CadenceEnrollmentView {
+  id: string
+  leadId: string
+  leadName: string | null
+  phone: string
+  cadenceId: string
+  cadenceName: string
+  status: CadenceEnrollmentStatus
+  currentStep: number
+  nextSendAt: string | null
+  startedAt: string
+  pausedAt: string | null
+  completedAt: string | null
+  cancelledAt: string | null
+  cancelReason: string | null
+  createdAt: string
+}
+
+export interface NotificationView {
+  id: string
+  type: NotificationType
+  title: string
+  body: string
+  entityType: string | null
+  entityId: string | null
+  readAt: string | null
+  createdAt: string
+}
+
+export interface NotificationListResponse {
+  items: NotificationView[]
+  total: number
+  unreadCount: number
+}
+
+export interface AiInsightView {
+  id: string
+  leadId: string
+  type: AiInsightType
+  status: AiInsightStatus
+  result: Record<string, unknown> | null
+  confidence: number | null
+  model: string | null
+  error: string | null
+  createdAt: string
+  updatedAt: string
+}
+
+export interface ReportsSummary {
+  period: {
+    from: string
+    to: string
+  }
+  leads: {
+    total: number
+    new: number
+    scheduled: number
+    lost: number
+    optOut: number
+  }
+  appointments: {
+    total: number
+    scheduled: number
+    completed: number
+    cancelled: number
+    noShow: number
+    conversionRate: number
+  }
+  cadences: {
+    activeEnrollments: number
+    completedEnrollments: number
+    failedEnrollments: number
+    tasksSent: number
+    tasksFailed: number
+  }
+  messaging: {
+    inbound: number
+    outbound: number
+    failed: number
+  }
 }

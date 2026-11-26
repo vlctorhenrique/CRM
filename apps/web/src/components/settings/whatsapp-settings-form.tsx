@@ -101,9 +101,13 @@ export function WhatsAppSettingsForm({
         <div className="grid gap-6 p-6 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid gap-4 sm:grid-cols-2">
-              <label className="block text-sm font-medium text-ink-soft">
+              <label
+                htmlFor="whatsapp-phone-number-id"
+                className="block text-sm font-medium text-ink-soft"
+              >
                 Phone number ID
                 <Input
+                  id="whatsapp-phone-number-id"
                   value={form.phoneNumberId}
                   onChange={(event) =>
                     setForm((current) => ({ ...current, phoneNumberId: event.target.value }))
@@ -114,9 +118,13 @@ export function WhatsAppSettingsForm({
                   required
                 />
               </label>
-              <label className="block text-sm font-medium text-ink-soft">
+              <label
+                htmlFor="whatsapp-display-number"
+                className="block text-sm font-medium text-ink-soft"
+              >
                 Número exibido
                 <Input
+                  id="whatsapp-display-number"
                   value={form.displayPhoneNumber}
                   onChange={(event) =>
                     setForm((current) => ({

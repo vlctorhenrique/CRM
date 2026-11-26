@@ -15,11 +15,20 @@ import { ensureWhatsAppAccount } from './src/modules/whatsapp/whatsapp.service.j
 
 const currentDirectory = path.dirname(fileURLToPath(import.meta.url))
 const migrationsFolder = path.resolve(currentDirectory, 'drizzle')
-const dataDirectory = path.resolve(currentDirectory, '.pglite-preview')
+const dataDirectory = path.resolve(
+  currentDirectory,
+  process.env.PREVIEW_DATA_DIR ?? '.pglite-preview',
+)
 const adminEmail = 'admin@clinica.demo'
 const demoPassword = process.env.SEED_ADMIN_PASSWORD ?? 'ChangeMe123!'
 
-async function seed(db: AppDatabase): Promise<void> {
+interface PreviewAccountDefaults {
+  phoneNumberId: string
+  displayPhoneNumber: string
+  initialMessage: string
+}
+
+async function seed(db: AppDatabase, accountDefaults: PreviewAccountDefaults): Promise<void> {
   const now = new Date()
   const slug = process.env.SEED_TENANT_SLUG ?? 'clinica-demo'
 
@@ -80,15 +89,113 @@ async function seed(db: AppDatabase): Promise<void> {
     })
   }
 
-  const initialMessage =
-    'Olá! Que bom ter você aqui. Para eu te ajudar melhor, qual procedimento ou tratamento despertou seu interesse?'
-
   const account = await ensureWhatsAppAccount(db, tenant.id, {
-    phoneNumberId: 'preview-phone-number-id',
-    displayPhoneNumber: '+55 11 99999-0000',
+    phoneNumberId: accountDefaults.phoneNumberId,
+    displayPhoneNumber: accountDefaults.displayPhoneNumber,
     status: 'connected',
-    initialMessage,
+    initialMessage: accountDefaults.initialMessage,
   })
+
+  const [admin] = await db
+    .select({ id: schema.users.id })
+    .from(schema.users)
+    .where(eq(schema.users.email, adminEmail))
+    .limit(1)
+
+  const demoTemplates = [
+    {
+      name: 'Reengajamento 24h',
+      body: 'Oi, {{nome}}! Passando para saber se você ainda tem interesse em {{procedimento}}. Posso te ajudar com os próximos passos?',
+      variables: ['nome', 'procedimento'],
+    },
+    {
+      name: 'Reengajamento 72h',
+      body: '{{nome}}, reservei um horário especial para sua avaliação. Quer que eu te envie as opções?',
+      variables: ['nome'],
+    },
+  ]
+  const templateIds = new Map<string, string>()
+
+  for (const template of demoTemplates) {
+    const [existing] = await db
+      .select({ id: schema.messageTemplates.id })
+      .from(schema.messageTemplates)
+      .where(
+        and(
+          eq(schema.messageTemplates.tenantId, tenant.id),
+          eq(schema.messageTemplates.name, template.name),
+        ),
+      )
+      .limit(1)
+
+    if (existing) {
+      templateIds.set(template.name, existing.id)
+      continue
+    }
+
+    const templateId = randomUUID()
+    await db.insert(schema.messageTemplates).values({
+      id: templateId,
+      tenantId: tenant.id,
+      name: template.name,
+      category: 'utility',
+      language: 'pt_BR',
+      body: template.body,
+      variables: template.variables,
+      status: 'approved',
+      createdByUserId: admin?.id ?? null,
+      createdAt: now,
+      updatedAt: now,
+    })
+    templateIds.set(template.name, templateId)
+  }
+
+  const cadenceName = 'Reengajamento pós-consulta'
+  const [existingCadence] = await db
+    .select({ id: schema.cadences.id })
+    .from(schema.cadences)
+    .where(and(eq(schema.cadences.tenantId, tenant.id), eq(schema.cadences.name, cadenceName)))
+    .limit(1)
+
+  if (!existingCadence) {
+    const cadenceId = randomUUID()
+    await db.insert(schema.cadences).values({
+      id: cadenceId,
+      tenantId: tenant.id,
+      name: cadenceName,
+      description: 'Dois toques para retomar o interesse após a consulta.',
+      status: 'active',
+      createdByUserId: admin?.id ?? null,
+      createdAt: now,
+      updatedAt: now,
+    })
+
+    const firstTemplateId = templateIds.get('Reengajamento 24h')
+    const secondTemplateId = templateIds.get('Reengajamento 72h')
+
+    if (firstTemplateId && secondTemplateId) {
+      await db.insert(schema.cadenceSteps).values([
+        {
+          id: randomUUID(),
+          tenantId: tenant.id,
+          cadenceId,
+          templateId: firstTemplateId,
+          position: 1,
+          delayHours: 24,
+          createdAt: now,
+        },
+        {
+          id: randomUUID(),
+          tenantId: tenant.id,
+          cadenceId,
+          templateId: secondTemplateId,
+          position: 2,
+          delayHours: 72,
+          createdAt: now,
+        },
+      ])
+    }
+  }
 
   const [sdr] = await db
     .select({ id: schema.users.id })
@@ -231,8 +338,8 @@ async function seed(db: AppDatabase): Promise<void> {
         ? new Date(now.getTime() - lastMessage.minutesAgo * 60 * 1000)
         : null,
       initialMessageSentAt:
-        demo.messages.length > 0
-          ? new Date(now.getTime() - demo.messages[1]!.minutesAgo * 60 * 1000)
+        demo.messages.length > 1
+          ? new Date(now.getTime() - (demo.messages[1]?.minutesAgo ?? 0) * 60 * 1000)
           : null,
       createdAt,
       updatedAt: now,
@@ -288,6 +395,13 @@ async function seed(db: AppDatabase): Promise<void> {
 }
 
 async function main(): Promise<void> {
+  const whatsappMode = process.env.WHATSAPP_MODE ?? 'dry-run'
+  const whatsappLive = whatsappMode === 'live'
+  const phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID ?? 'preview-phone-number-id'
+  const displayPhoneNumber = process.env.WHATSAPP_PHONE_NUMBER ?? '+55 11 99999-0000'
+  const initialMessage =
+    process.env.WHATSAPP_INITIAL_MESSAGE ??
+    'Olá! Que bom ter você aqui. Para eu te ajudar melhor, qual procedimento ou tratamento despertou seu interesse?'
   const config = toAppConfig({
     NODE_ENV: 'development',
     API_PORT: process.env.API_PORT ?? '3333',
@@ -298,8 +412,21 @@ async function main(): Promise<void> {
     WEB_ORIGIN: 'http://localhost:3000,http://127.0.0.1:3000',
     LOG_LEVEL: process.env.LOG_LEVEL ?? 'info',
     ENABLE_API_DOCS: 'true',
+    ENABLE_DEV_SIMULATOR: 'true',
+    CADENCE_WORKER_ENABLED: 'false',
     RATE_LIMIT_MAX: '1000',
     APP_VERSION: '0.1.0-preview',
+    WHATSAPP_MODE: whatsappMode,
+    WHATSAPP_VERIFY_TOKEN: whatsappLive
+      ? process.env.WHATSAPP_VERIFY_TOKEN
+      : (process.env.WHATSAPP_VERIFY_TOKEN ?? 'preview-verify-token'),
+    WHATSAPP_APP_SECRET: whatsappLive
+      ? process.env.WHATSAPP_APP_SECRET
+      : (process.env.WHATSAPP_APP_SECRET ?? 'preview-app-secret'),
+    WHATSAPP_ACCESS_TOKEN: process.env.WHATSAPP_ACCESS_TOKEN,
+    WHATSAPP_PHONE_NUMBER_ID: whatsappLive ? process.env.WHATSAPP_PHONE_NUMBER_ID : phoneNumberId,
+    WHATSAPP_WABA_ID: process.env.WHATSAPP_WABA_ID,
+    WHATSAPP_INITIAL_MESSAGE: initialMessage,
   })
 
   const client = new PGlite(dataDirectory)
@@ -309,7 +436,7 @@ async function main(): Promise<void> {
 
   const db = pgliteDb as unknown as AppDatabase
 
-  await seed(db)
+  await seed(db, { phoneNumberId, displayPhoneNumber, initialMessage })
 
   const app = await buildApp({ config, db, redis: null })
 

@@ -1,11 +1,18 @@
 import {
+  AI_INSIGHT_STATUSES,
+  APPOINTMENT_STATUSES,
   type BusinessHours,
+  CADENCE_ENROLLMENT_STATUSES,
+  CADENCE_STATUSES,
+  CADENCE_TASK_STATUSES,
   CONSENT_STATUSES,
   CONVERSATION_STATUSES,
   LEAD_SOURCES,
   LEAD_STATUSES,
   MESSAGE_DIRECTIONS,
   MESSAGE_STATUSES,
+  TEMPLATE_CATEGORIES,
+  TEMPLATE_STATUSES,
   WHATSAPP_CONNECTION_STATUSES,
 } from '@crm/shared'
 import { relations } from 'drizzle-orm'
@@ -40,6 +47,16 @@ export const webhookEventStatusEnum = pgEnum('webhook_event_status', [
   'ignored',
   'failed',
 ])
+export const appointmentStatusEnum = pgEnum('appointment_status', APPOINTMENT_STATUSES)
+export const templateCategoryEnum = pgEnum('template_category', TEMPLATE_CATEGORIES)
+export const templateStatusEnum = pgEnum('template_status', TEMPLATE_STATUSES)
+export const cadenceStatusEnum = pgEnum('cadence_status', CADENCE_STATUSES)
+export const cadenceEnrollmentStatusEnum = pgEnum(
+  'cadence_enrollment_status',
+  CADENCE_ENROLLMENT_STATUSES,
+)
+export const cadenceTaskStatusEnum = pgEnum('cadence_task_status', CADENCE_TASK_STATUSES)
+export const aiInsightStatusEnum = pgEnum('ai_insight_status', AI_INSIGHT_STATUSES)
 
 export const tenants = pgTable(
   'tenants',
@@ -198,6 +215,7 @@ export const conversations = pgTable(
       .references(() => whatsappAccounts.id, { onDelete: 'restrict' }),
     status: conversationStatusEnum('status').notNull().default('open'),
     humanTakeover: boolean('human_takeover').notNull().default(false),
+    aiEnabled: boolean('ai_enabled').notNull().default(true),
     unreadCount: integer('unread_count').notNull().default(0),
     lastMessagePreview: text('last_message_preview'),
     lastMessageAt: timestamp('last_message_at', { withTimezone: true }),
@@ -267,6 +285,244 @@ export const webhookEvents = pgTable(
   ],
 )
 
+export const appointments = pgTable(
+  'appointments',
+  {
+    id: uuid('id').primaryKey(),
+    tenantId: uuid('tenant_id')
+      .notNull()
+      .references(() => tenants.id, { onDelete: 'cascade' }),
+    leadId: uuid('lead_id')
+      .notNull()
+      .references(() => leads.id, { onDelete: 'cascade' }),
+    ownerUserId: uuid('owner_user_id').references(() => users.id, { onDelete: 'set null' }),
+    createdByUserId: uuid('created_by_user_id').references(() => users.id, {
+      onDelete: 'set null',
+    }),
+    procedure: text('procedure'),
+    scheduledAt: timestamp('scheduled_at', { withTimezone: true }).notNull(),
+    durationMinutes: integer('duration_minutes').notNull().default(60),
+    status: appointmentStatusEnum('status').notNull().default('scheduled'),
+    notes: text('notes'),
+    cancellationReason: text('cancellation_reason'),
+    cancelledAt: timestamp('cancelled_at', { withTimezone: true }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index('appointments_tenant_scheduled_idx').on(table.tenantId, table.scheduledAt),
+    index('appointments_tenant_status_idx').on(table.tenantId, table.status),
+    index('appointments_lead_idx').on(table.leadId),
+  ],
+)
+
+export const messageTemplates = pgTable(
+  'message_templates',
+  {
+    id: uuid('id').primaryKey(),
+    tenantId: uuid('tenant_id')
+      .notNull()
+      .references(() => tenants.id, { onDelete: 'cascade' }),
+    name: text('name').notNull(),
+    category: templateCategoryEnum('category').notNull().default('marketing'),
+    language: text('language').notNull().default('pt_BR'),
+    body: text('body').notNull(),
+    variables: jsonb('variables').$type<string[]>().notNull().default([]),
+    status: templateStatusEnum('status').notNull().default('draft'),
+    metaTemplateId: text('meta_template_id'),
+    rejectionReason: text('rejection_reason'),
+    createdByUserId: uuid('created_by_user_id').references(() => users.id, {
+      onDelete: 'set null',
+    }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex('message_templates_tenant_name_unique').on(table.tenantId, table.name),
+    index('message_templates_tenant_status_idx').on(table.tenantId, table.status),
+  ],
+)
+
+export const cadences = pgTable(
+  'cadences',
+  {
+    id: uuid('id').primaryKey(),
+    tenantId: uuid('tenant_id')
+      .notNull()
+      .references(() => tenants.id, { onDelete: 'cascade' }),
+    name: text('name').notNull(),
+    description: text('description'),
+    status: cadenceStatusEnum('status').notNull().default('draft'),
+    createdByUserId: uuid('created_by_user_id').references(() => users.id, {
+      onDelete: 'set null',
+    }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex('cadences_tenant_name_unique').on(table.tenantId, table.name),
+    index('cadences_tenant_status_idx').on(table.tenantId, table.status),
+  ],
+)
+
+export const cadenceSteps = pgTable(
+  'cadence_steps',
+  {
+    id: uuid('id').primaryKey(),
+    tenantId: uuid('tenant_id')
+      .notNull()
+      .references(() => tenants.id, { onDelete: 'cascade' }),
+    cadenceId: uuid('cadence_id')
+      .notNull()
+      .references(() => cadences.id, { onDelete: 'cascade' }),
+    templateId: uuid('template_id')
+      .notNull()
+      .references(() => messageTemplates.id, { onDelete: 'restrict' }),
+    position: integer('position').notNull(),
+    delayHours: integer('delay_hours').notNull().default(0),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex('cadence_steps_cadence_position_unique').on(table.cadenceId, table.position),
+    index('cadence_steps_tenant_idx').on(table.tenantId),
+    index('cadence_steps_template_idx').on(table.templateId),
+  ],
+)
+
+export const cadenceEnrollments = pgTable(
+  'cadence_enrollments',
+  {
+    id: uuid('id').primaryKey(),
+    tenantId: uuid('tenant_id')
+      .notNull()
+      .references(() => tenants.id, { onDelete: 'cascade' }),
+    leadId: uuid('lead_id')
+      .notNull()
+      .references(() => leads.id, { onDelete: 'cascade' }),
+    cadenceId: uuid('cadence_id')
+      .notNull()
+      .references(() => cadences.id, { onDelete: 'cascade' }),
+    status: cadenceEnrollmentStatusEnum('status').notNull().default('active'),
+    currentStep: integer('current_step').notNull().default(0),
+    nextSendAt: timestamp('next_send_at', { withTimezone: true }),
+    startedAt: timestamp('started_at', { withTimezone: true }).notNull().defaultNow(),
+    pausedAt: timestamp('paused_at', { withTimezone: true }),
+    pauseReason: text('pause_reason'),
+    completedAt: timestamp('completed_at', { withTimezone: true }),
+    cancelledAt: timestamp('cancelled_at', { withTimezone: true }),
+    cancelReason: text('cancel_reason'),
+    createdByUserId: uuid('created_by_user_id').references(() => users.id, {
+      onDelete: 'set null',
+    }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index('cadence_enrollments_tenant_lead_status_idx').on(
+      table.tenantId,
+      table.leadId,
+      table.status,
+    ),
+    index('cadence_enrollments_next_send_idx').on(table.nextSendAt),
+    index('cadence_enrollments_cadence_idx').on(table.cadenceId),
+  ],
+)
+
+export const cadenceTasks = pgTable(
+  'cadence_tasks',
+  {
+    id: uuid('id').primaryKey(),
+    tenantId: uuid('tenant_id')
+      .notNull()
+      .references(() => tenants.id, { onDelete: 'cascade' }),
+    enrollmentId: uuid('enrollment_id')
+      .notNull()
+      .references(() => cadenceEnrollments.id, { onDelete: 'cascade' }),
+    leadId: uuid('lead_id')
+      .notNull()
+      .references(() => leads.id, { onDelete: 'cascade' }),
+    cadenceId: uuid('cadence_id')
+      .notNull()
+      .references(() => cadences.id, { onDelete: 'cascade' }),
+    stepId: uuid('step_id')
+      .notNull()
+      .references(() => cadenceSteps.id, { onDelete: 'cascade' }),
+    scheduledAt: timestamp('scheduled_at', { withTimezone: true }).notNull(),
+    status: cadenceTaskStatusEnum('status').notNull().default('pending'),
+    attempts: integer('attempts').notNull().default(0),
+    maxAttempts: integer('max_attempts').notNull().default(3),
+    lockedAt: timestamp('locked_at', { withTimezone: true }),
+    nextAttemptAt: timestamp('next_attempt_at', { withTimezone: true }),
+    sentAt: timestamp('sent_at', { withTimezone: true }),
+    providerMessageId: text('provider_message_id'),
+    error: text('error'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex('cadence_tasks_enrollment_step_unique').on(table.enrollmentId, table.stepId),
+    index('cadence_tasks_status_scheduled_idx').on(table.status, table.scheduledAt),
+    index('cadence_tasks_next_attempt_idx').on(table.nextAttemptAt),
+    index('cadence_tasks_tenant_idx').on(table.tenantId),
+  ],
+)
+
+export const notifications = pgTable(
+  'notifications',
+  {
+    id: uuid('id').primaryKey(),
+    tenantId: uuid('tenant_id')
+      .notNull()
+      .references(() => tenants.id, { onDelete: 'cascade' }),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    type: text('type').notNull(),
+    title: text('title').notNull(),
+    body: text('body').notNull(),
+    entityType: text('entity_type'),
+    entityId: text('entity_id'),
+    readAt: timestamp('read_at', { withTimezone: true }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index('notifications_user_unread_idx').on(table.tenantId, table.userId, table.readAt),
+    index('notifications_tenant_created_idx').on(table.tenantId, table.createdAt),
+  ],
+)
+
+export const aiInsights = pgTable(
+  'ai_insights',
+  {
+    id: uuid('id').primaryKey(),
+    tenantId: uuid('tenant_id')
+      .notNull()
+      .references(() => tenants.id, { onDelete: 'cascade' }),
+    leadId: uuid('lead_id')
+      .notNull()
+      .references(() => leads.id, { onDelete: 'cascade' }),
+    conversationId: uuid('conversation_id').references(() => conversations.id, {
+      onDelete: 'set null',
+    }),
+    messageId: uuid('message_id').references(() => messages.id, { onDelete: 'set null' }),
+    type: text('type').notNull(),
+    status: aiInsightStatusEnum('status').notNull().default('pending'),
+    result: jsonb('result').$type<Record<string, unknown>>(),
+    confidence: integer('confidence'),
+    model: text('model'),
+    error: text('error'),
+    attempts: integer('attempts').notNull().default(0),
+    nextAttemptAt: timestamp('next_attempt_at', { withTimezone: true }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex('ai_insights_message_type_unique').on(table.messageId, table.type),
+    index('ai_insights_status_next_attempt_idx').on(table.status, table.nextAttemptAt),
+    index('ai_insights_tenant_lead_idx').on(table.tenantId, table.leadId),
+  ],
+)
+
 export const tenantsRelations = relations(tenants, ({ many }) => ({
   users: many(users),
   whatsappAccounts: many(whatsappAccounts),
@@ -274,6 +530,13 @@ export const tenantsRelations = relations(tenants, ({ many }) => ({
   conversations: many(conversations),
   messages: many(messages),
   webhookEvents: many(webhookEvents),
+  appointments: many(appointments),
+  messageTemplates: many(messageTemplates),
+  cadences: many(cadences),
+  cadenceEnrollments: many(cadenceEnrollments),
+  cadenceTasks: many(cadenceTasks),
+  notifications: many(notifications),
+  aiInsights: many(aiInsights),
 }))
 
 export const usersRelations = relations(users, ({ one, many }) => ({
@@ -311,6 +574,10 @@ export const leadsRelations = relations(leads, ({ one, many }) => ({
   }),
   conversations: many(conversations),
   messages: many(messages),
+  appointments: many(appointments),
+  cadenceEnrollments: many(cadenceEnrollments),
+  cadenceTasks: many(cadenceTasks),
+  aiInsights: many(aiInsights),
 }))
 
 export const conversationsRelations = relations(conversations, ({ one, many }) => ({
@@ -327,9 +594,10 @@ export const conversationsRelations = relations(conversations, ({ one, many }) =
     references: [whatsappAccounts.id],
   }),
   messages: many(messages),
+  aiInsights: many(aiInsights),
 }))
 
-export const messagesRelations = relations(messages, ({ one }) => ({
+export const messagesRelations = relations(messages, ({ one, many }) => ({
   tenant: one(tenants, {
     fields: [messages.tenantId],
     references: [tenants.id],
@@ -350,12 +618,149 @@ export const messagesRelations = relations(messages, ({ one }) => ({
     fields: [messages.senderUserId],
     references: [users.id],
   }),
+  aiInsights: many(aiInsights),
 }))
 
 export const webhookEventsRelations = relations(webhookEvents, ({ one }) => ({
   tenant: one(tenants, {
     fields: [webhookEvents.tenantId],
     references: [tenants.id],
+  }),
+}))
+
+export const appointmentsRelations = relations(appointments, ({ one }) => ({
+  tenant: one(tenants, {
+    fields: [appointments.tenantId],
+    references: [tenants.id],
+  }),
+  lead: one(leads, {
+    fields: [appointments.leadId],
+    references: [leads.id],
+  }),
+  owner: one(users, {
+    relationName: 'appointmentOwner',
+    fields: [appointments.ownerUserId],
+    references: [users.id],
+  }),
+  createdBy: one(users, {
+    relationName: 'appointmentCreator',
+    fields: [appointments.createdByUserId],
+    references: [users.id],
+  }),
+}))
+
+export const messageTemplatesRelations = relations(messageTemplates, ({ one, many }) => ({
+  tenant: one(tenants, {
+    fields: [messageTemplates.tenantId],
+    references: [tenants.id],
+  }),
+  createdBy: one(users, {
+    fields: [messageTemplates.createdByUserId],
+    references: [users.id],
+  }),
+  steps: many(cadenceSteps),
+}))
+
+export const cadencesRelations = relations(cadences, ({ one, many }) => ({
+  tenant: one(tenants, {
+    fields: [cadences.tenantId],
+    references: [tenants.id],
+  }),
+  createdBy: one(users, {
+    fields: [cadences.createdByUserId],
+    references: [users.id],
+  }),
+  steps: many(cadenceSteps),
+  enrollments: many(cadenceEnrollments),
+  tasks: many(cadenceTasks),
+}))
+
+export const cadenceStepsRelations = relations(cadenceSteps, ({ one, many }) => ({
+  tenant: one(tenants, {
+    fields: [cadenceSteps.tenantId],
+    references: [tenants.id],
+  }),
+  cadence: one(cadences, {
+    fields: [cadenceSteps.cadenceId],
+    references: [cadences.id],
+  }),
+  template: one(messageTemplates, {
+    fields: [cadenceSteps.templateId],
+    references: [messageTemplates.id],
+  }),
+  tasks: many(cadenceTasks),
+}))
+
+export const cadenceEnrollmentsRelations = relations(cadenceEnrollments, ({ one, many }) => ({
+  tenant: one(tenants, {
+    fields: [cadenceEnrollments.tenantId],
+    references: [tenants.id],
+  }),
+  lead: one(leads, {
+    fields: [cadenceEnrollments.leadId],
+    references: [leads.id],
+  }),
+  cadence: one(cadences, {
+    fields: [cadenceEnrollments.cadenceId],
+    references: [cadences.id],
+  }),
+  createdBy: one(users, {
+    fields: [cadenceEnrollments.createdByUserId],
+    references: [users.id],
+  }),
+  tasks: many(cadenceTasks),
+}))
+
+export const cadenceTasksRelations = relations(cadenceTasks, ({ one }) => ({
+  tenant: one(tenants, {
+    fields: [cadenceTasks.tenantId],
+    references: [tenants.id],
+  }),
+  enrollment: one(cadenceEnrollments, {
+    fields: [cadenceTasks.enrollmentId],
+    references: [cadenceEnrollments.id],
+  }),
+  lead: one(leads, {
+    fields: [cadenceTasks.leadId],
+    references: [leads.id],
+  }),
+  cadence: one(cadences, {
+    fields: [cadenceTasks.cadenceId],
+    references: [cadences.id],
+  }),
+  step: one(cadenceSteps, {
+    fields: [cadenceTasks.stepId],
+    references: [cadenceSteps.id],
+  }),
+}))
+
+export const notificationsRelations = relations(notifications, ({ one }) => ({
+  tenant: one(tenants, {
+    fields: [notifications.tenantId],
+    references: [tenants.id],
+  }),
+  user: one(users, {
+    fields: [notifications.userId],
+    references: [users.id],
+  }),
+}))
+
+export const aiInsightsRelations = relations(aiInsights, ({ one }) => ({
+  tenant: one(tenants, {
+    fields: [aiInsights.tenantId],
+    references: [tenants.id],
+  }),
+  lead: one(leads, {
+    fields: [aiInsights.leadId],
+    references: [leads.id],
+  }),
+  conversation: one(conversations, {
+    fields: [aiInsights.conversationId],
+    references: [conversations.id],
+  }),
+  message: one(messages, {
+    fields: [aiInsights.messageId],
+    references: [messages.id],
   }),
 }))
 
@@ -368,3 +773,11 @@ export type ConversationRecord = typeof conversations.$inferSelect
 export type MessageRecord = typeof messages.$inferSelect
 export type WhatsAppAccountRecord = typeof whatsappAccounts.$inferSelect
 export type WebhookEventRecord = typeof webhookEvents.$inferSelect
+export type AppointmentRecord = typeof appointments.$inferSelect
+export type MessageTemplateRecord = typeof messageTemplates.$inferSelect
+export type CadenceRecord = typeof cadences.$inferSelect
+export type CadenceStepRecord = typeof cadenceSteps.$inferSelect
+export type CadenceEnrollmentRecord = typeof cadenceEnrollments.$inferSelect
+export type CadenceTaskRecord = typeof cadenceTasks.$inferSelect
+export type NotificationRecord = typeof notifications.$inferSelect
+export type AiInsightRecord = typeof aiInsights.$inferSelect
