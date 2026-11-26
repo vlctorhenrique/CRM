@@ -1,13 +1,22 @@
-import { createLeadSchema, LEAD_STATUSES, sendMessageSchema, updateLeadSchema } from '@crm/shared'
+import {
+  consentLeadSchema,
+  createLeadSchema,
+  LEAD_STATUSES,
+  sendMessageSchema,
+  updateLeadSchema,
+} from '@crm/shared'
 import type { FastifyInstance } from 'fastify'
 import { z } from 'zod'
 import { parseInput } from '../../lib/validation.js'
 import { getAuthContext } from '../../plugins/auth.js'
 import {
+  claimLead,
   createLead,
   getLeadDetails,
   listLeads,
   markConversationRead,
+  recordLeadConsent,
+  releaseLead,
   sendLeadMessage,
   updateLead,
 } from './leads.service.js'
@@ -19,6 +28,7 @@ const leadParamsSchema = z.object({
 const listQuerySchema = z.object({
   search: z.string().trim().max(100).optional(),
   status: z.enum(LEAD_STATUSES).optional(),
+  assignment: z.enum(['all', 'mine', 'unassigned']).default('all'),
   limit: z.coerce.number().int().min(1).max(100).default(50),
   offset: z.coerce.number().int().min(0).default(0),
 })
@@ -113,6 +123,77 @@ export async function registerLeadRoutes(app: FastifyInstance): Promise<void> {
       const { leadId } = parseInput(leadParamsSchema, request.params)
       const input = parseInput(updateLeadSchema, request.body)
       const lead = await updateLead(
+        app.db,
+        { user: auth.user },
+        auth.tenant.id,
+        leadId,
+        input,
+        metadataFrom(request),
+      )
+      return reply.send({ lead })
+    },
+  )
+
+  app.post(
+    '/v1/leads/:leadId/claim',
+    {
+      preHandler: app.authenticate,
+      schema: {
+        tags: ['Leads'],
+        summary: 'Assume um lead não atribuído',
+      },
+    },
+    async (request, reply) => {
+      const auth = getAuthContext(request)
+      const { leadId } = parseInput(leadParamsSchema, request.params)
+      const lead = await claimLead(
+        app.db,
+        { user: auth.user },
+        auth.tenant.id,
+        leadId,
+        metadataFrom(request),
+      )
+      return reply.send({ lead })
+    },
+  )
+
+  app.post(
+    '/v1/leads/:leadId/release',
+    {
+      preHandler: app.authenticate,
+      schema: {
+        tags: ['Leads'],
+        summary: 'Remove o responsável do lead',
+      },
+    },
+    async (request, reply) => {
+      const auth = getAuthContext(request)
+      const { leadId } = parseInput(leadParamsSchema, request.params)
+      const lead = await releaseLead(
+        app.db,
+        { user: auth.user },
+        auth.tenant.id,
+        leadId,
+        metadataFrom(request),
+      )
+      return reply.send({ lead })
+    },
+  )
+
+  app.post(
+    '/v1/leads/:leadId/consent',
+    {
+      preHandler: app.authenticate,
+      schema: {
+        tags: ['Leads'],
+        summary: 'Registra consentimento explícito do lead',
+      },
+    },
+    async (request, reply) => {
+      const auth = getAuthContext(request)
+      const { leadId } = parseInput(leadParamsSchema, request.params)
+      const input = parseInput(consentLeadSchema, request.body)
+      const lead = await recordLeadConsent(
         app.db,
         { user: auth.user },
         auth.tenant.id,
