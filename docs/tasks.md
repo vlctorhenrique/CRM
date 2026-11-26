@@ -31,4 +31,5 @@ cada merge. As Issues do GitHub espelham os mesmos IDs.
 - Estimativas: B0 2-3d; B1 4-5d; B2 6-8d; B3 4-5d; B4 2-3d; B5 3-5d; F 7-10d.
 - B5 pode rodar em paralelo com F.
 - Toda tarefa exige testes e `npm.cmd run verify` verde.
-- SD-01 está no PR #22; converter `confidence` 0-1 para 0-100 ao persistir em B3.
+- SD-01 concluído; converter `confidence` 0-1 para 0-100 ao persistir em B3.
+- Branch protection da `main` bloqueada pelo plano do repositório privado; PR + CI `verify` seguem obrigatórios por convenção.
