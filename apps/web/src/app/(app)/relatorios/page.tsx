@@ -1,6 +1,8 @@
 import { PageHeader } from '@/components/shell/page-header'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
 import { getHealth, getReports } from '@/lib/api'
 
 export const metadata = {
@@ -31,6 +33,27 @@ export default async function ReportsPage({
         title="Relatórios"
         description="Resumo comercial do período selecionado, com os mesmos filtros de permissão da API."
       />
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Filtrar período</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form method="get" action="/relatorios" className="flex flex-wrap items-end gap-3">
+            <label className="space-y-1.5" htmlFor="reports-from">
+              <span className="text-xs font-semibold uppercase tracking-wide text-muted">De</span>
+              <Input id="reports-from" name="from" type="date" defaultValue={filters.from ?? ''} />
+            </label>
+            <label className="space-y-1.5" htmlFor="reports-to">
+              <span className="text-xs font-semibold uppercase tracking-wide text-muted">Até</span>
+              <Input id="reports-to" name="to" type="date" defaultValue={filters.to ?? ''} />
+            </label>
+            <Button type="submit" variant="secondary">
+              Aplicar
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
 
       {!summary ? (
         <Card>
