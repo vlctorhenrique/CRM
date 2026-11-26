@@ -14,17 +14,18 @@ seção. Ele não contém tokens nem segredos.
 - **SD-01 — Utilitários puros:** concluído e mergeado em `80a815d` (PR #22): extrator
   determinístico, horário comercial e render de templates. `confidence` vem em 0-1; converter
   para 0-100 ao persistir em B3.
-- **B1 — Leads/agenda/consentimento:** TL-04 concluído em `c2c121d` (PR #26): filtro
-  `assignment`, claim/release idempotentes e consentimento auditado; revogação marca `opt_out_at`.
-  SD-02 em andamento; TL-05 depende do merge de SD-02.
+- **B1 — Leads/agenda/consentimento:** concluído. TL-04 em `c2c121d` (PR #26) entregou filtro
+  `assignment`, claim/release idempotentes e consentimento auditado; SD-02 em `e84ea23` (PR #29)
+  entregou CRUD de agendamentos com RBAC, conflitos, transições e notificações; TL-05 integra seed
+  e e2e (PR em andamento).
 - **B2–B5:** planejadas em `docs/backend-plan.md`.
 - **Proteção de `main`:** não disponível no plano atual do repositório privado; PR + CI `verify`
   continuam obrigatórios por convenção até o repo ser público/Pro.
 
-Branch atual do tech lead: `chore/b1-status` (atualização do board). O dev sênior trabalha no
-worktree `C:\Users\victor\CRM-senior`, branch `feat/sd-02-appointments`.
+Branch atual do tech lead: `feat/b1-integration` (seed/e2e do B1). Como o dev sênior está fora, o
+tech lead também assumiu SD-02; o worktree `C:\Users\victor\CRM-senior` permanece disponível.
 
-`main` local = `origin/main` em `c2c121d`. O arquivo `apps/api/.env` existe localmente, está
+`main` local = `origin/main` em `e84ea23`. O arquivo `apps/api/.env` existe localmente, está
 ignorado pelo Git e guarda a configuração live.
 
 ### O que entrou no B0
@@ -94,11 +95,11 @@ ignorado pelo Git e guarda a configuração live.
 
 - `npm.cmd run lint`: passou no baseline; rodar novamente no B0.
 - `npm.cmd run typecheck`: passou após as mudanças do B0.
-- `npm.cmd test`: 10 arquivos, 76 testes, todos passando após o TL-04.
+- `npm.cmd test`: 11 arquivos, 81 testes, todos passando após o B1.
 - `npm.cmd run test:e2e`: 1 fluxo headless passando (login, inbound, lead, dashboard,
   configuração e envio manual).
 - `npm.cmd run build`: passou no `verify` do SD-01, incluindo Next.js.
-- `npm.cmd run verify`: passou (lint, typecheck, 76 testes e build).
+- `npm.cmd run verify`: passou (lint, typecheck, 81 testes e build).
 - Prévia web/API em modo dry-run: login, leads, detalhe, conversas, dashboard e configurações
   responderam 200.
 - Webhook público via túnel: `/health` 200 e desafio `GET /webhooks/whatsapp` 200 com o token
