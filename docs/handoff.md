@@ -8,7 +8,7 @@ seção. Ele não contém tokens nem segredos.
 - **Etapa 1 — Fundação:** concluída; commits originais `198fd4b`/`350be1c` preservados na
   branch `backup/local-main-350be1c`.
 - **Etapa 2 — CRM e WhatsApp:** concluída e reconciliada no PR #1.
-- **Etapa 2 — validação live:** pendente; faltam credenciais da Meta.
+- **Etapa 2 — validação live:** pendente; falta apenas `WHATSAPP_APP_SECRET`.
 - **B0 — Fundação da Etapa 3:** concluído e mergeado na `main` em `09b7703` (PR #23); issues
   #2–#4 fechadas.
 - **SD-01 — Utilitários puros:** concluído e mergeado em `80a815d` (PR #22): extrator
@@ -121,13 +121,16 @@ Configuração local em `apps/api/.env` (ignorado pelo Git):
 
 - `WHATSAPP_MODE=live`
 - `WHATSAPP_VERIFY_TOKEN`: preenchido com token aleatório de 64 caracteres.
-- `WHATSAPP_PHONE_NUMBER`: preenchido com um número pessoal; para o teste deve ser trocado pelo
-  número de teste exibido pela Meta.
-- `WHATSAPP_APP_SECRET`: **vazio**.
-- `WHATSAPP_ACCESS_TOKEN`: **vazio**.
-- `WHATSAPP_PHONE_NUMBER_ID`: **vazio**.
-- `WHATSAPP_WABA_ID`: **vazio**.
+- `WHATSAPP_PHONE_NUMBER`: preenchido com o número de teste da Meta.
+- `WHATSAPP_APP_SECRET`: **vazio** (único campo pendente).
+- `WHATSAPP_ACCESS_TOKEN`: preenchido com o token temporário de teste (não versionado).
+- `WHATSAPP_PHONE_NUMBER_ID`: preenchido com o phone number ID do número de teste.
+- `WHATSAPP_WABA_ID`: preenchido com a conta de mensagens da Meta.
 - `PREVIEW_DATA_DIR` aponta para o banco PGlite live temporário.
+
+O arquivo `docs/phone number de teste.txt` contém as credenciais de teste e foi adicionado ao
+`.gitignore`; deve ser removido do workspace ao final da validação. A consulta à Graph API com o
+token de teste confirmou o número (`verified_name=Test Number`) e o phone number ID.
 
 A API na porta 3333 ainda está rodando o processo antigo em dry-run. Ela precisa ser reiniciada
 depois de preencher as credenciais para carregar `apps/api/.env` e o código novo da prévia.
