@@ -12,6 +12,7 @@ import { type AppConfig, loadConfig } from './config/env.js'
 import { type AppDatabase, createDatabase } from './db/client.js'
 import { createRedis } from './db/redis.js'
 import { AppError } from './lib/errors.js'
+import { registerAiRoutes } from './modules/ai/ai.routes.js'
 import { registerAppointmentRoutes } from './modules/appointments/appointments.routes.js'
 import { registerAuthRoutes } from './modules/auth/auth.routes.js'
 import { registerCadenceRoutes } from './modules/cadences/cadences.routes.js'
@@ -170,6 +171,7 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   await registerUsersRoutes(app)
   await registerTenantRoutes(app)
   await registerTemplateRoutes(app)
+  await registerAiRoutes(app)
   await registerCadenceRoutes(app)
   await registerLeadRoutes(app)
   await registerNotificationRoutes(app)
