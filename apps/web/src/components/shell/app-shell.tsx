@@ -3,6 +3,7 @@
 import { type MeResponse, ROLE_LABELS } from '@crm/shared'
 import {
   BarChart3,
+  Bell,
   CalendarDays,
   LayoutDashboard,
   Loader2,
@@ -30,6 +31,7 @@ const navigation = [
   { href: '/cadencias', label: 'Cadências', icon: RefreshCw },
   { href: '/agenda', label: 'Agenda', icon: CalendarDays },
   { href: '/relatorios', label: 'Relatórios', icon: BarChart3 },
+  { href: '/notificacoes', label: 'Notificações', icon: Bell },
   { href: '/configuracoes', label: 'Configurações', icon: Settings },
 ]
 
