@@ -180,14 +180,19 @@ Cancelamento usa `PATCH` com `status: "cancelled"` e `cancellationReason`.
 
 ### IA
 
-| Método | Rota                                   | Permissão     | Descrição                   |
-| ------ | -------------------------------------- | ------------- | --------------------------- |
-| GET    | `/v1/leads/:leadId/ai-insights`        | autenticado   | Insights do lead            |
-| POST   | `/v1/leads/:leadId/ai-insights`        | autenticado   | Enfileira extração/resumo   |
-| PATCH  | `/v1/conversations/:conversationId/ai` | admin/gerente | Liga/desliga IA na conversa |
+| Método | Rota                                   | Permissão     | Descrição                     |
+| ------ | -------------------------------------- | ------------- | ----------------------------- |
+| GET    | `/v1/leads/:leadId/ai-insights`        | autenticado   | Insights do lead              |
+| POST   | `/v1/leads/:leadId/ai-insights`        | autenticado   | Enfileira extração/resumo     |
+| PATCH  | `/v1/conversations/:conversationId/ai` | admin/gerente | Define IA ativa ou silenciosa |
 
 O worker de IA roda no processo da API a cada 60s, respeita `AI_MODE`, `AI_DAILY_LIMIT` e
-`AI_TIMEOUT_MS`, e nunca envia mensagem. `AI_MODE=off` também desliga o worker.
+`AI_TIMEOUT_MS`, e nunca envia mensagem. `AI_MODE=off` também desliga o worker. Cada insight
+traz `summary`, `classification` (`qualification`, `scheduling`, `clinical_question`,
+`pricing_question`, `out_of_scope`, `other`), `requiresSdr` e `silent`. Campos do lead ainda não
+preenchidos (`interestProcedure`, `objective`, `bodyRegion`, `previousTreatment`) são preenchidos
+apenas com dados informados pelo contato. Casos clínicos, preço e fora de escopo geram notificação
+interna para a SDR. Em atendimento humano, `aiEnabled=false` mantém a análise (`silent=true`).
 
 ### Relatórios
 
@@ -271,6 +276,9 @@ Body: `{ "phone": "...", "name?": "...", "text": "..." }`. Retorna `processed`, 
   agendamento cria/cancela tarefas e notifica; testes de RBAC/tenant.
 - B2: cadência ativa envia uma vez por passo, respeita horário/opt-out, retry e conclusão;
   templates validam variáveis; notificações criadas.
-- B3: IA silenciosa e idempotente, fallback sem rede, LLM opcional; nenhum envio automático.
+- B3: IA silenciosa e idempotente, fallback sem rede, LLM opcional; extração, resumo e
+  classificação sem inventar dados; encaminha dúvidas clínicas/preço à SDR; nenhum envio automático.
+- E3 (Etapa 3 do README/PRD): análise continua em atendimento humano (`silent=true`), preenche
+  somente campos vazios do lead e notifica a SDR nos casos fora de escopo.
 - B4: relatórios filtram tenant/período/responsável; health expõe backlog do worker; contrato v1
   publicado; handoff atualizado.

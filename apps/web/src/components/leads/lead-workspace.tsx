@@ -14,7 +14,7 @@ import {
   WHATSAPP_CONNECTION_LABELS,
   WHATSAPP_MODE_LABELS,
 } from '@crm/shared'
-import { AlertTriangle, CheckCircle2, Loader2, MessageSquare, Save, Send } from 'lucide-react'
+import { AlertTriangle, Bot, CheckCircle2, Loader2, MessageSquare, Save, Send } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
 import { Badge } from '@/components/ui/badge'
@@ -52,6 +52,7 @@ export function LeadWorkspace({
   const [text, setText] = useState('')
   const [sending, setSending] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [aiEnabled, setAiEnabled] = useState(conversation?.aiEnabled ?? false)
   const [error, setError] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
   const [form, setForm] = useState({
@@ -160,6 +161,26 @@ export function LeadWorkspace({
     setForm((current) => ({ ...current, [key]: value }))
   }
 
+  async function toggleAi() {
+    if (!conversation) {
+      return
+    }
+
+    const next = !aiEnabled
+    setError(null)
+
+    try {
+      await apiRequest(`/v1/conversations/${conversation.id}/ai`, {
+        method: 'PATCH',
+        body: JSON.stringify({ aiEnabled: next }),
+      })
+      setAiEnabled(next)
+      router.refresh()
+    } catch (cause) {
+      setError(cause instanceof ApiClientError ? cause.message : 'Não foi possível alterar a IA.')
+    }
+  }
+
   return (
     <div className="grid gap-5 xl:grid-cols-[minmax(0,1.55fr)_minmax(0,1fr)]">
       <Card className="flex min-h-[36rem] flex-col overflow-hidden">
@@ -181,6 +202,17 @@ export function LeadWorkspace({
               <Badge tone={modeTone(whatsapp.mode)}>{WHATSAPP_MODE_LABELS[whatsapp.mode]}</Badge>
               <span className="text-muted">{whatsapp.displayPhoneNumber}</span>
             </div>
+          ) : null}
+          {conversation && canAssign ? (
+            <Button
+              type="button"
+              variant={aiEnabled ? 'secondary' : 'ghost'}
+              size="sm"
+              onClick={() => void toggleAi()}
+            >
+              <Bot className="size-3.5" aria-hidden="true" />
+              IA {aiEnabled ? 'ativa' : 'silenciosa'}
+            </Button>
           ) : null}
         </div>
 

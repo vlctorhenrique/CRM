@@ -8,6 +8,15 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { getAiInsights, getLeadDetails, getSession, getTeamMembers } from '@/lib/api'
 import { leadStatusTone } from '@/lib/presentation'
 
+const AI_CLASSIFICATION_LABELS: Record<string, string> = {
+  qualification: 'Qualificação',
+  scheduling: 'Agendamento',
+  clinical_question: 'Dúvida clínica',
+  pricing_question: 'Dúvida de preço',
+  out_of_scope: 'Fora de escopo',
+  other: 'Outro',
+}
+
 export default async function LeadDetailPage({ params }: { params: Promise<{ leadId: string }> }) {
   const { leadId } = await params
   const [session, detail, team, insights] = await Promise.all([
@@ -98,9 +107,25 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ lea
                   </span>
                 </div>
                 {insight.result ? (
-                  <p className="mt-2 text-sm text-ink-soft">
-                    {String(insight.result.summary ?? 'Resumo indisponível')}
-                  </p>
+                  <>
+                    <p className="mt-2 text-sm text-ink-soft">
+                      {String(insight.result.summary ?? 'Resumo indisponível')}
+                    </p>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {typeof insight.result.classification === 'string' ? (
+                        <Badge tone="neutral">
+                          {AI_CLASSIFICATION_LABELS[insight.result.classification] ??
+                            insight.result.classification}
+                        </Badge>
+                      ) : null}
+                      {insight.result.requiresSdr === true ? (
+                        <Badge tone="sand">Requer SDR</Badge>
+                      ) : null}
+                      {insight.result.silent === true ? (
+                        <Badge tone="brand">Modo silencioso</Badge>
+                      ) : null}
+                    </div>
+                  </>
                 ) : null}
               </div>
             ))}

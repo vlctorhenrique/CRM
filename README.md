@@ -2,7 +2,7 @@
 
 CRM comercial para clínicas de estética e emagrecimento, construído a partir do PRD v1.1. O produto começa com uma clínica, mas nasce preparado para operação multiempresa.
 
-**Status atual: B1–B4 e frontend entregues; integração live da Meta pendente de credenciais.**
+**Status atual: B0–B5, frontend e Etapa 3 (IA assistiva) entregues; integração live da Meta validada.**
 
 ## O que já existe
 
@@ -18,7 +18,9 @@ CRM comercial para clínicas de estética e emagrecimento, construído a partir 
 - Agendamentos manuais com RBAC, conflito de horário, transições de status e notificações.
 - Templates com variáveis validadas, cadências com inscrição elegível e worker no processo da API.
 - Limites de horário comercial, retry com backoff, opt-out e pausa por resposta humana.
-- IA assistiva silenciosa com fallback determinístico e LLM opcional (`AI_MODE`).
+- IA assistiva com extração, resumo e classificação; fallback determinístico e LLM opcional (`AI_MODE`).
+- Modo silencioso no atendimento humano: a IA continua analisando sem enviar mensagens e
+  encaminha dúvidas clínicas, de preço e fora de escopo para a SDR.
 - Relatórios de funil, agenda, cadências e mensagens, além de health com backlog.
 - Páginas de agenda, cadências, relatórios, notificações e insights de IA no detalhe do lead.
 - Leads com cadastro manual, deduplicação por telefone, filtros, responsável e pipeline de status.
@@ -199,8 +201,8 @@ Para recomeçar do zero, pare a API e remova `apps/api/.pglite-preview`.
 
 ## Próximas etapas
 
-1. **Etapa 3** — IA assistiva para extração, classificação e resumo, com modo silencioso.
-2. **Etapa 4** — Pipeline/Kanban, permissões da SDR e registro manual de agendamento.
+1. **Etapa 3 — concluída:** IA assistiva para extração, classificação e resumo, com modo silencioso.
+2. **Etapa 4 — próxima:** Pipeline/Kanban, permissões da SDR e registro manual de agendamento.
 3. **Etapa 5** — Fila de elegíveis, seleção, templates, cadências de até sete dias, opt-out e idempotência.
 4. **Etapa 6** — Indicadores, notificações, backup monitorado e testes de aceitação.
 5. **Etapa 7** — Piloto com uma clínica e um número oficial.

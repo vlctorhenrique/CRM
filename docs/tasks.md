@@ -25,11 +25,15 @@ cada merge. As Issues do GitHub espelham os mesmos IDs.
 | TL-11 | Tech lead  | B5: Meta live e staging                                                | `feat/b5-meta`             | TL-10        | #19   | #53 | done   |
 | SD-08 | Dev sênior | F: agenda, cadências, relatórios e adições de leads                    | `feat/sd-08-pages`         | TL-10        | #20   | #41 | done   |
 | TL-12 | Tech lead  | F: shell, clients, e2e final e release                                 | `feat/f-integration`       | TL-11, SD-08 | #21   | #42 | done   |
+| E3-01 | Tech lead  | Etapa 3: classificação de mensagens e limites de resposta              | `feat/e3-classification`   | TL-12        | #54   | #55 | done   |
+| E3-02 | Tech lead  | Etapa 3: modo silencioso, persistência e encaminhamento à SDR          | `feat/e3-silent`           | E3-01        | #54   | #56 | done   |
+| E3-03 | Tech lead  | Etapa 3: painel, contrato, README e handoff                            | `feat/e3-panel`            | E3-02        | #54   | #57 | done   |
 
 ## Observações
 
-- Sincronizado em 26/11/2026: **21 de 21 tarefas `done`**. B5 validado com webhook assinado,
-  inbound processado, envio real e idempotência; issue #19 fechada no PR #53.
+- Sincronizado em 26/11/2026: **24 de 24 tarefas `done`**. B5 validado com webhook assinado,
+  inbound processado, envio real e idempotência (issue #19/PR #53); Etapa 3 entregue com extração,
+  classificação, resumo e modo silencioso (issue #54/PRs #55–#57).
 - Pós-release: #44 worker de IA, #45 notificações, #46 filtro de relatórios, #47/#49 docs,
   #50 proteção de credenciais, #51 correção da prévia, #52 redaction de logs, #53 fechamento do B5.
 - Estimativas: B0 2-3d; B1 4-5d; B2 6-8d; B3 4-5d; B4 2-3d; B5 3-5d; F 7-10d.
