@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs'
+import path from 'node:path'
 import type { HealthResponse } from '@crm/shared'
 import { and, count, eq, isNull, lt, or, sql } from 'drizzle-orm'
 import type { FastifyInstance } from 'fastify'
@@ -34,6 +36,50 @@ async function checkRedis(app: FastifyInstance): Promise<'ok' | 'disabled' | 'er
     return 'ok'
   } catch {
     return 'error'
+  }
+}
+
+function readBackupStatus(app: FastifyInstance): NonNullable<HealthResponse['backup']> {
+  const file = app.config.backupStatusFile
+
+  if (!file) {
+    return {
+      configured: false,
+      lastRunAt: null,
+      lastStatus: 'unknown',
+      ageHours: null,
+      stale: false,
+    }
+  }
+
+  try {
+    const parsed = JSON.parse(readFileSync(path.resolve(process.cwd(), file), 'utf8')) as {
+      status?: unknown
+      at?: unknown
+    }
+    const lastRunAt =
+      typeof parsed.at === 'string' && !Number.isNaN(Date.parse(parsed.at)) ? parsed.at : null
+    const lastStatus =
+      parsed.status === 'ok' || parsed.status === 'failed' ? parsed.status : 'unknown'
+    const ageHours = lastRunAt
+      ? Math.round(((Date.now() - Date.parse(lastRunAt)) / 3_600_000) * 10) / 10
+      : null
+
+    return {
+      configured: true,
+      lastRunAt,
+      lastStatus,
+      ageHours,
+      stale: lastStatus !== 'ok' || ageHours === null || ageHours > app.config.backupStaleHours,
+    }
+  } catch {
+    return {
+      configured: true,
+      lastRunAt: null,
+      lastStatus: 'unknown',
+      ageHours: null,
+      stale: true,
+    }
   }
 }
 
@@ -87,6 +133,7 @@ export async function registerHealthRoutes(app: FastifyInstance): Promise<void> 
           cadenceTasksStale: Number(staleRow?.total ?? 0),
           aiInsightsPending: Number(insightRow?.total ?? 0),
         },
+        backup: readBackupStatus(app),
         timestamp: new Date().toISOString(),
       }
 

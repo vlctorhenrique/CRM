@@ -45,6 +45,8 @@ const envSchema = z
     AI_API_KEY: optionalString(8),
     AI_DAILY_LIMIT: z.coerce.number().int().min(0).max(10_000).default(200),
     AI_TIMEOUT_MS: z.coerce.number().int().min(1000).max(60_000).default(15_000),
+    BACKUP_STATUS_FILE: optionalString(),
+    BACKUP_STALE_HOURS: z.coerce.number().int().min(1).max(720).default(26),
     APP_VERSION: z.string().default('0.1.0'),
     WHATSAPP_MODE: z.enum(WHATSAPP_MODES).default('disabled'),
     WHATSAPP_VERIFY_TOKEN: optionalString(8),
@@ -128,6 +130,8 @@ export interface AppConfig {
   aiApiKey: string | null
   aiDailyLimit: number
   aiTimeoutMs: number
+  backupStatusFile: string | null
+  backupStaleHours: number
   version: string
   whatsappMode: WhatsAppMode
   whatsappVerifyToken: string | null
@@ -177,6 +181,8 @@ export function toAppConfig(values: Record<string, string | undefined>): AppConf
     aiApiKey: env.AI_API_KEY ?? null,
     aiDailyLimit: env.AI_DAILY_LIMIT,
     aiTimeoutMs: env.AI_TIMEOUT_MS,
+    backupStatusFile: env.BACKUP_STATUS_FILE ?? null,
+    backupStaleHours: env.BACKUP_STALE_HOURS,
     version: env.APP_VERSION,
     whatsappMode: env.WHATSAPP_MODE,
     whatsappVerifyToken: env.WHATSAPP_VERIFY_TOKEN ?? null,
