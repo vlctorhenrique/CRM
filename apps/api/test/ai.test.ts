@@ -3,7 +3,7 @@ import type { AuthUser } from '@crm/shared'
 import { and, eq } from 'drizzle-orm'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import type { TenantRecord, UserRecord } from '../src/db/schema/index.js'
-import { conversations, messages } from '../src/db/schema/index.js'
+import { conversations, leads, messages, notifications } from '../src/db/schema/index.js'
 import { enqueueAiInsight, processAiInsights } from '../src/modules/ai/ai.service.js'
 import {
   createTestContext,
@@ -24,6 +24,7 @@ describe('IA assistiva', () => {
   let sdrCookie: string
   let leadId: string
   let conversationId: string
+  let whatsappAccountId: string
 
   beforeAll(async () => {
     context = await createTestContext()
@@ -33,6 +34,7 @@ describe('IA assistiva', () => {
     adminCookie = (await loginAs(context.app, admin.email)).cookie
     sdrCookie = (await loginAs(context.app, sdr.email)).cookie
     const account = await seedWhatsAppAccount(context.db, { tenantId: tenant.id })
+    whatsappAccountId = account.id
 
     const created = await context.app.inject({
       method: 'POST',
@@ -108,6 +110,57 @@ describe('IA assistiva', () => {
     expect(listed.json().insights[0].confidence).toBeGreaterThan(0)
     expect(listed.json().insights[0].model).toBe('fallback')
     expect(listed.json().insights[0].result.procedure).toBe('Botox')
+    expect(listed.json().insights[0].result.silent).toBe(true)
+
+    const [updatedLead] = await context.db
+      .select()
+      .from(leads)
+      .where(and(eq(leads.tenantId, tenant.id), eq(leads.id, leadId)))
+    expect(updatedLead?.interestProcedure).toBe('Botox')
+    expect(updatedLead?.bodyRegion).toBe('Facial')
+    expect(updatedLead?.previousTreatment).toBe('nao')
+  })
+
+  it('notifica a SDR quando a mensagem exige atendimento humano', async () => {
+    await context.db.insert(messages).values({
+      id: randomUUID(),
+      tenantId: tenant.id,
+      conversationId,
+      leadId,
+      whatsappAccountId,
+      direction: 'inbound',
+      type: 'text',
+      status: 'received',
+      providerMessageId: 'ai-price-1',
+      body: 'Quanto custa o botox?',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    })
+
+    const created = await context.app.inject({
+      method: 'POST',
+      url: `/v1/leads/${leadId}/ai-insights`,
+      headers: { cookie: adminCookie },
+      payload: { type: 'extraction' },
+    })
+    expect(created.statusCode).toBe(201)
+    const insightId = created.json().insight.id as string
+
+    expect((await processAiInsights(context.db, testConfig())).completed).toBe(1)
+
+    const listed = await context.app.inject({
+      method: 'GET',
+      url: `/v1/leads/${leadId}/ai-insights`,
+      headers: { cookie: adminCookie },
+    })
+    expect(listed.json().insights[0].result.classification).toBe('pricing_question')
+    expect(listed.json().insights[0].result.requiresSdr).toBe(true)
+
+    const alerts = await context.db
+      .select()
+      .from(notifications)
+      .where(and(eq(notifications.tenantId, tenant.id), eq(notifications.entityId, insightId)))
+    expect(alerts.some((alert) => alert.title === 'Dúvida encaminhada à SDR')).toBe(true)
   })
 
   it('respeita RBAC e modo desligado', async () => {
@@ -127,6 +180,21 @@ describe('IA assistiva', () => {
     })
     expect(enabled.statusCode).toBe(200)
     expect(enabled.json().conversation.aiEnabled).toBe(true)
+
+    const queued = await context.app.inject({
+      method: 'POST',
+      url: `/v1/leads/${leadId}/ai-insights`,
+      headers: { cookie: adminCookie },
+      payload: { type: 'extraction' },
+    })
+    expect(queued.statusCode).toBe(201)
+    await processAiInsights(context.db, testConfig())
+    const active = await context.app.inject({
+      method: 'GET',
+      url: `/v1/leads/${leadId}/ai-insights`,
+      headers: { cookie: adminCookie },
+    })
+    expect(active.json().insights[0].result.silent).toBe(false)
 
     await expect(
       enqueueAiInsight(
@@ -163,6 +231,6 @@ describe('IA assistiva', () => {
       .select()
       .from(messages)
       .where(and(eq(messages.tenantId, tenant.id), eq(messages.leadId, leadId)))
-    expect(unused.length).toBe(1)
+    expect(unused.length).toBe(2)
   })
 })
