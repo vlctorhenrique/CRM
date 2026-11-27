@@ -735,6 +735,7 @@ export interface ConversationView {
   phone: string
   status: ConversationStatus
   humanTakeover: boolean
+  aiEnabled: boolean
   unreadCount: number
   lastMessagePreview: string | null
   lastMessageAt: string | null

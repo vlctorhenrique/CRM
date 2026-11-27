@@ -140,6 +140,7 @@ interface ConversationRow {
   phone: string
   status: 'open' | 'closed'
   humanTakeover: boolean
+  aiEnabled: boolean
   unreadCount: number
   lastMessagePreview: string | null
   lastMessageAt: Date | null
@@ -159,6 +160,7 @@ function toConversationView(row: ConversationRow): ConversationView {
     phone: row.phone,
     status: row.status,
     humanTakeover: row.humanTakeover,
+    aiEnabled: row.aiEnabled,
     unreadCount: row.unreadCount,
     lastMessagePreview: row.lastMessagePreview,
     lastMessageAt: toIso(row.lastMessageAt),
@@ -181,6 +183,7 @@ async function findConversationRow(
       phone: leads.phoneNormalized,
       status: conversations.status,
       humanTakeover: conversations.humanTakeover,
+      aiEnabled: conversations.aiEnabled,
       unreadCount: conversations.unreadCount,
       lastMessagePreview: conversations.lastMessagePreview,
       lastMessageAt: conversations.lastMessageAt,

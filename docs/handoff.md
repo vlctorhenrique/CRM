@@ -27,9 +27,11 @@ seção. Ele não contém tokens nem segredos.
 - **F — Frontend:** concluído. SD-08 em `0d50d86` (PR #41) entregou agenda, cadências,
   relatórios e insights; TL-12 em `c7f6645` (PR #42) finalizou shell, clients e release.
 - **Pós-release:** PR #44 ligou o worker de IA no servidor; #45 entregou página de notificações;
-  #46 adicionou filtro de período nos relatórios; #47 atualizou handoff/README; #48 sincronizou o
-  board; #49 estabilizou referências; #50 protegeu as credenciais de teste; #51 corrigiu a prévia;
-  #52 redactionou segredos em URLs de log; #53 fechou B5. `verify` e `test:e2e` verdes.
+  #46 adicionou filtro de período nos relatórios; #47/#49 docs; #48 sincronizou o board; #50
+  protegeu credenciais; #51 corrigiu a prévia; #52 redactionou segredos em URLs; #53 fechou B5.
+- **Etapa 3 (README/PRD):** concluída em #55–#57 (issue #54): classificação e limites de resposta,
+  modo silencioso com persistência assistiva, encaminhamento à SDR e painel/contrato atualizados.
+  `verify` e `test:e2e` verdes.
 - **Proteção de `main`:** não disponível no plano atual do repositório privado; PR + CI `verify`
   continuam obrigatórios por convenção até o repo ser público/Pro.
 
@@ -214,8 +216,8 @@ No Windows, para encerrar a API: localizar o PID com
 - O primeiro atendimento é marcado como enviado antes da chamada à Meta; falha de envio é
   registrada, mas não há retry automático.
 - Webhook é processado de forma síncrona na requisição; pode sofrer timeout sob carga.
-- Fora da janela de 24h o envio é bloqueado; templates e cadências são Etapa 5.
-- Não há IA, Kanban, agendamento nativo, notificações nem relatórios avançados ainda.
+- Fora da janela de 24h o envio de texto é bloqueado; templates e cadências já estão entregues.
+- IA é assistiva e não responde dúvidas clínicas; Kanban e agenda nativa são etapas seguintes.
 - PGlite é apenas para prévia; produção exige PostgreSQL.
 - App da Meta em modo de desenvolvimento aceita apenas destinatários autorizados.
 - A validação Docker/VPS continua pendente.
@@ -238,5 +240,6 @@ No Windows, para encerrar a API: localizar o PID com
 
 ## Prompt para a próxima seção
 
-> Leia `docs/handoff.md`: B0–B5 e F estão concluídos. Para retomar a integração live, gere um token
-> novo, reinicie a prévia e configure um novo túnel; nunca exponha nem versione tokens.
+> Leia `docs/handoff.md`: B0–B5, F e Etapa 3 (IA assistiva) estão concluídos. A próxima frente é a
+> Etapa 4 do README (pipeline/Kanban e permissões da SDR). Para retomar a integração live, gere um
+> token novo, reinicie a prévia e configure um novo túnel; nunca exponha nem versione tokens.
