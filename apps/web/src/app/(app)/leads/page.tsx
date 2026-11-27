@@ -6,6 +6,7 @@ import {
 } from '@crm/shared'
 import { MessageSquare, Search, SlidersHorizontal, UserRound } from 'lucide-react'
 import Link from 'next/link'
+import { KanbanBoard } from '@/components/leads/kanban-board'
 import { NewLeadForm } from '@/components/leads/new-lead-form'
 import { PageHeader } from '@/components/shell/page-header'
 import { Badge } from '@/components/ui/badge'
@@ -68,21 +69,35 @@ function LeadRow({ lead }: { lead: LeadListItem }) {
 export default async function LeadsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ search?: string; status?: string }>
+  searchParams: Promise<{ search?: string; status?: string; assignment?: string; view?: string }>
 }) {
   const params = await searchParams
   const search = typeof params.search === 'string' ? params.search.trim() : ''
   const status = isLeadStatus(params.status) ? params.status : undefined
+  const view = params.view === 'kanban' ? 'kanban' : 'list'
+  const assignment =
+    params.assignment === 'mine' || params.assignment === 'unassigned'
+      ? params.assignment
+      : undefined
   const [session, leads, team] = await Promise.all([
     getSession(),
-    getLeads({ search: search || undefined, status }),
+    getLeads({ search: search || undefined, status, assignment }),
     getTeamMembers(),
   ])
 
   if (!session) return null
 
   const canAssign = session.user.role === 'admin' || session.user.role === 'manager'
-  const hasFilters = search.length > 0 || status !== undefined
+  const hasFilters = search.length > 0 || status !== undefined || assignment !== undefined
+
+  function hrefFor(nextView: 'list' | 'kanban'): string {
+    const query = new URLSearchParams()
+    if (search) query.set('search', search)
+    if (status) query.set('status', status)
+    if (assignment) query.set('assignment', assignment)
+    query.set('view', nextView)
+    return `/leads?${query.toString()}`
+  }
 
   return (
     <div className="space-y-6">
@@ -91,9 +106,31 @@ export default async function LeadsPage({
         title="Leads"
         description="Todos os contatos da clínica em um só lugar. A conversa do WhatsApp cria o lead automaticamente e o cadastro manual segue a mesma deduplicação por telefone."
         actions={
-          <Badge tone="brand">
-            {leads.total} lead{leads.total === 1 ? '' : 's'}
-          </Badge>
+          <div className="flex flex-wrap items-center gap-3">
+            <Badge tone="brand">
+              {leads.total} lead{leads.total === 1 ? '' : 's'}
+            </Badge>
+            <div className="flex items-center rounded-lg border border-line bg-surface p-0.5">
+              <Link
+                href={hrefFor('list')}
+                className={cn(
+                  'rounded-md px-3 py-1.5 text-xs font-semibold',
+                  view === 'list' ? 'bg-brand-600 text-white' : 'text-muted hover:text-ink',
+                )}
+              >
+                Lista
+              </Link>
+              <Link
+                href={hrefFor('kanban')}
+                className={cn(
+                  'rounded-md px-3 py-1.5 text-xs font-semibold',
+                  view === 'kanban' ? 'bg-brand-600 text-white' : 'text-muted hover:text-ink',
+                )}
+              >
+                Kanban
+              </Link>
+            </div>
+          </div>
         }
       />
 
@@ -104,6 +141,7 @@ export default async function LeadsPage({
           method="GET"
           className="flex flex-col gap-3 border-b border-line p-4 sm:flex-row sm:items-center"
         >
+          <input type="hidden" name="view" value={view} />
           <div className="relative flex-1">
             <Search
               className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted"
@@ -132,6 +170,16 @@ export default async function LeadsPage({
                 </option>
               ))}
             </select>
+            <select
+              name="assignment"
+              defaultValue={assignment ?? 'all'}
+              className={`${inputClasses} min-w-48`}
+              aria-label="Filtrar por atribuição"
+            >
+              <option value="all">Todas as atribuições</option>
+              <option value="mine">Meus leads</option>
+              <option value="unassigned">Fila de não atribuídos</option>
+            </select>
             <Button type="submit" variant="secondary" size="sm">
               Filtrar
             </Button>
@@ -143,7 +191,9 @@ export default async function LeadsPage({
           </div>
         </form>
 
-        {leads.items.length === 0 ? (
+        {view === 'kanban' ? (
+          <KanbanBoard leads={leads.items} />
+        ) : leads.items.length === 0 ? (
           <div className="flex flex-col items-center justify-center px-6 py-16 text-center">
             <div className="flex size-12 items-center justify-center rounded-2xl bg-brand-50 text-brand-700">
               <MessageSquare className="size-5" aria-hidden="true" />

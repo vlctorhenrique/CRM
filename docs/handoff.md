@@ -31,6 +31,8 @@ seção. Ele não contém tokens nem segredos.
   protegeu credenciais; #51 corrigiu a prévia; #52 redactionou segredos em URLs; #53 fechou B5.
 - **Etapa 3 (README/PRD):** concluída em #55–#57 (issue #54): classificação e limites de resposta,
   modo silencioso com persistência assistiva, encaminhamento à SDR e painel/contrato atualizados.
+- **Etapa 4 (README/PRD):** concluída em #59–#60 (issue #58): Kanban com movimentação rápida de
+  status, filtro `assignment` para a fila da SDR e agendamento manual sem integração UNO.
   `verify` e `test:e2e` verdes.
 - **Proteção de `main`:** não disponível no plano atual do repositório privado; PR + CI `verify`
   continuam obrigatórios por convenção até o repo ser público/Pro.
@@ -240,6 +242,7 @@ No Windows, para encerrar a API: localizar o PID com
 
 ## Prompt para a próxima seção
 
-> Leia `docs/handoff.md`: B0–B5, F e Etapa 3 (IA assistiva) estão concluídos. A próxima frente é a
-> Etapa 4 do README (pipeline/Kanban e permissões da SDR). Para retomar a integração live, gere um
-> token novo, reinicie a prévia e configure um novo túnel; nunca exponha nem versione tokens.
+> Leia `docs/handoff.md`: B0–B5, F, Etapa 3 (IA assistiva) e Etapa 4 (Kanban/SDR) estão concluídos.
+> A próxima frente é a Etapa 5 do README (fila de elegíveis, seleção e cadências). Para retomar a
+> integração live, gere um token novo, reinicie a prévia e configure um novo túnel; nunca exponha
+> nem versione tokens.
