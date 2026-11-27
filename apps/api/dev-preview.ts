@@ -224,7 +224,7 @@ async function seed(db: AppDatabase, accountDefaults: PreviewAccountDefaults): P
         },
         {
           direction: 'outbound' as const,
-          body: initialMessage,
+          body: accountDefaults.initialMessage,
           minutesAgo: 31,
           status: 'read' as const,
         },
@@ -249,7 +249,7 @@ async function seed(db: AppDatabase, accountDefaults: PreviewAccountDefaults): P
         },
         {
           direction: 'outbound' as const,
-          body: initialMessage,
+          body: accountDefaults.initialMessage,
           minutesAgo: 74,
           status: 'read' as const,
         },
@@ -276,7 +276,7 @@ async function seed(db: AppDatabase, accountDefaults: PreviewAccountDefaults): P
         },
         {
           direction: 'outbound' as const,
-          body: initialMessage,
+          body: accountDefaults.initialMessage,
           minutesAgo: 1499,
           status: 'read' as const,
         },
@@ -385,7 +385,7 @@ async function seed(db: AppDatabase, accountDefaults: PreviewAccountDefaults): P
         status: message.direction === 'inbound' ? 'received' : (message.status ?? 'sent'),
         providerMessageId: `preview-${demo.phone.replace(/\D/g, '')}-${index}`,
         body: message.body,
-        senderUserId: message.senderUserId ?? null,
+        senderUserId: 'senderUserId' in message ? (message.senderUserId ?? null) : null,
         providerTimestamp: messageDate,
         createdAt: messageDate,
         updatedAt: messageDate,

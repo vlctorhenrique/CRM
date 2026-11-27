@@ -6,6 +6,12 @@
     "types": ["node"],
     "tsBuildInfoFile": "dist/.tsbuildinfo-test"
   },
-  "include": ["src/**/*.ts", "test/**/*.ts", "vitest.config.ts", "drizzle.config.ts"],
+  "include": [
+    "src/**/*.ts",
+    "test/**/*.ts",
+    "dev-preview.ts",
+    "vitest.config.ts",
+    "drizzle.config.ts"
+  ],
   "exclude": []
 }
