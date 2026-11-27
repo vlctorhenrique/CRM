@@ -23,7 +23,7 @@ CRM comercial para clínicas de estética e emagrecimento, construído a partir 
 - IA assistiva com extração, resumo e classificação; fallback determinístico e LLM opcional (`AI_MODE`).
 - Modo silencioso no atendimento humano: a IA continua analisando sem enviar mensagens e
   encaminha dúvidas clínicas, de preço e fora de escopo para a SDR.
-- Relatórios de funil, agenda, cadências e mensagens, além de health com backlog.
+- Relatórios de funil, agenda, cadências e mensagens, além de health com backlog e monitoramento do backup.
 - Páginas de agenda, cadências, relatórios, notificações e insights de IA no detalhe do lead.
 - Leads com cadastro manual, deduplicação por telefone, filtros, responsável e pipeline de status.
 - Recebimento pela WhatsApp Cloud API oficial com validação de assinatura HMAC e idempotência.
@@ -206,8 +206,8 @@ Para recomeçar do zero, pare a API e remova `apps/api/.pglite-preview`.
 1. **Etapa 3 — concluída:** IA assistiva para extração, classificação e resumo, com modo silencioso.
 2. **Etapa 4 — concluída:** Pipeline/Kanban, permissões da SDR e registro manual de agendamento.
 3. **Etapa 5 — concluída:** Fila de elegíveis, seleção, templates, cadências de até sete dias, opt-out e idempotência.
-4. **Etapa 6 — próxima:** Indicadores, notificações, backup monitorado e testes de aceitação.
-5. **Etapa 7** — Piloto com uma clínica e um número oficial.
+4. **Etapa 6 — concluída:** Indicadores, notificações, backup monitorado e testes de aceitação.
+5. **Etapa 7 — próxima:** Piloto com uma clínica e um número oficial.
 
 A integração com o UNO e a agenda nativa estão fora do MVP, conforme o adendo v1.1.
 

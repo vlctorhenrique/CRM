@@ -227,12 +227,14 @@ Body: `{ "phone": "...", "name?": "...", "text": "..." }`. Retorna `processed`, 
 
 ### Sistema
 
-| Método | Rota      | Permissão | Descrição                                                           |
-| ------ | --------- | --------- | ------------------------------------------------------------------- |
-| GET    | `/health` | pública   | Status de database/redis e backlog de `cadence_tasks`/`ai_insights` |
+| Método | Rota      | Permissão | Descrição                                                   |
+| ------ | --------- | --------- | ----------------------------------------------------------- |
+| GET    | `/health` | pública   | Status de database/redis, backlog e monitoramento do backup |
 
 `backlog` expõe `cadenceTasksPending`, `cadenceTasksStale` (locked sem atualização por 60s) e
-`aiInsightsPending`.
+`aiInsightsPending`. `backup` aparece quando `BACKUP_STATUS_FILE` está configurado e traz
+`configured`, `lastRunAt`, `lastStatus`, `ageHours` e `stale` (acima de `BACKUP_STALE_HOURS`, padrão
+26h). O script `scripts/backup-postgres.sh` grava `ok`/`failed` nesse arquivo.
 
 ## Worker de cadências
 
@@ -296,5 +298,8 @@ Body: `{ "phone": "...", "name?": "...", "text": "..." }`. Retorna `processed`, 
   filtro `assignment` na fila da SDR e agendamento manual registrado sem integração UNO.
 - E5 (Etapa 5 do README/PRD): fila elegível explica bloqueios, prévia precede a inscrição em lote,
   SDR limitada aos próprios leads, auditoria por inscrição e respeito a opt-out/agendamento/consentimento.
+- E6 (Etapa 6 do README/PRD): suíte `apps/api/test/acceptance.test.ts` cobre primeiro atendimento
+  único, IA assistiva/silenciosa sem envio, ausência de cadência sem seleção e bloqueio por opt-out;
+  backup monitorado no `/health`.
 - B4: relatórios filtram tenant/período/responsável; health expõe backlog do worker; contrato v1
   publicado; handoff atualizado.
