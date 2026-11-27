@@ -61,6 +61,13 @@ export async function apiRequest<T>(path: string, init: RequestInit = {}): Promi
   return (await response.json()) as T
 }
 
+export async function updateLeadStatus(leadId: string, status: string): Promise<void> {
+  await apiRequest(`/v1/leads/${leadId}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ status }),
+  })
+}
+
 export async function logoutRequest(): Promise<void> {
   await fetch(`${PROXY_BASE}/v1/auth/logout`, {
     method: 'POST',
