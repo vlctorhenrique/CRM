@@ -1,6 +1,13 @@
 'use client'
 
-import type { CadenceEnrollmentView, CadenceView, MessageTemplateView } from '@crm/shared'
+import type {
+  CadenceBatchPreview,
+  CadenceBatchResult,
+  CadenceEligibleLead,
+  CadenceEnrollmentView,
+  CadenceView,
+  MessageTemplateView,
+} from '@crm/shared'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { Badge } from '@/components/ui/badge'
@@ -20,11 +27,13 @@ export function CadencesPanel({
   cadences,
   templates,
   enrollments,
+  eligibleLeads,
 }: {
   leads: LeadOption[]
   cadences: CadenceView[]
   templates: MessageTemplateView[]
   enrollments: CadenceEnrollmentView[]
+  eligibleLeads: CadenceEligibleLead[]
 }) {
   const router = useRouter()
   const [name, setName] = useState('')
@@ -32,6 +41,10 @@ export function CadencesPanel({
   const [delay, setDelay] = useState('24')
   const [leadId, setLeadId] = useState(leads[0]?.id ?? '')
   const [enrollCadenceId, setEnrollCadenceId] = useState(cadences[0]?.id ?? '')
+  const [batchCadenceId, setBatchCadenceId] = useState(cadences[0]?.id ?? '')
+  const [selectedIds, setSelectedIds] = useState<string[]>([])
+  const [batchIds, setBatchIds] = useState<string[]>([])
+  const [preview, setPreview] = useState<CadenceBatchPreview | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
 
@@ -90,6 +103,38 @@ export function CadencesPanel({
           status === 'cancelled' ? { status, reason: 'Cancelado pelo painel' } : { status },
         ),
       })
+    })
+
+  const requestPreview = (ids: string[]) =>
+    run(async () => {
+      if (!batchCadenceId || ids.length === 0) {
+        throw new ApiClientError('Selecione cadência e ao menos um lead.', 'MISSING_FIELDS', 422)
+      }
+
+      const result = await apiRequest<CadenceBatchResult>(
+        `/v1/cadences/${batchCadenceId}/enroll-batch`,
+        { method: 'POST', body: JSON.stringify({ leadIds: ids, preview: true }) },
+      )
+      setBatchIds(ids)
+      setPreview(result.preview)
+    })
+
+  const confirmBatch = () =>
+    run(async () => {
+      if (!batchCadenceId || batchIds.length === 0) {
+        throw new ApiClientError('Faça a prévia antes de confirmar.', 'MISSING_FIELDS', 422)
+      }
+
+      const result = await apiRequest<CadenceBatchResult>(
+        `/v1/cadences/${batchCadenceId}/enroll-batch`,
+        { method: 'POST', body: JSON.stringify({ leadIds: batchIds, preview: false }) },
+      )
+      setPreview(null)
+      setBatchIds([])
+      setSelectedIds([])
+      if (result.failed.length > 0) {
+        setError(`${result.failed.length} inscrição(ões) falharam. Confira os dados dos leads.`)
+      }
     })
 
   return (
@@ -272,6 +317,116 @@ export function CadencesPanel({
               ))
             )}
           </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Fila de elegíveis</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <p className="text-sm text-muted">
+            Leads sem agendamento ativo, com consentimento registrado e fora de opt-out. A inscrição
+            só acontece após a confirmação da prévia.
+          </p>
+          <div className="flex flex-wrap items-end gap-3">
+            <label className="min-w-48 flex-1 space-y-1.5">
+              <span className="text-xs font-semibold uppercase tracking-wide text-muted">
+                Cadência ativa
+              </span>
+              <select
+                value={batchCadenceId}
+                onChange={(event) => setBatchCadenceId(event.target.value)}
+                className="h-11 w-full rounded-xl border border-line-strong bg-surface px-3.5 text-sm text-ink"
+              >
+                {cadences
+                  .filter((cadence) => cadence.status === 'active')
+                  .map((cadence) => (
+                    <option key={cadence.id} value={cadence.id}>
+                      {cadence.name}
+                    </option>
+                  ))}
+              </select>
+            </label>
+            <Button
+              variant="secondary"
+              disabled={busy || !batchCadenceId}
+              onClick={() =>
+                requestPreview(
+                  eligibleLeads.filter((item) => item.eligible).map((item) => item.leadId),
+                )
+              }
+            >
+              Selecionar todos os elegíveis
+            </Button>
+          </div>
+
+          <div className="max-h-80 space-y-2 overflow-y-auto rounded-xl border border-line p-3">
+            {eligibleLeads.length === 0 ? (
+              <p className="text-sm text-muted">Nenhum lead disponível para seleção.</p>
+            ) : (
+              eligibleLeads.map((item) => (
+                <label
+                  key={item.leadId}
+                  className="flex flex-wrap items-center gap-3 rounded-lg px-2 py-2 text-sm hover:bg-surface-muted"
+                >
+                  <input
+                    type="checkbox"
+                    disabled={!item.eligible || busy}
+                    checked={selectedIds.includes(item.leadId)}
+                    onChange={(event) =>
+                      setSelectedIds((current) =>
+                        event.target.checked
+                          ? [...current, item.leadId]
+                          : current.filter((id) => id !== item.leadId),
+                      )
+                    }
+                  />
+                  <span className="min-w-32 flex-1 font-medium text-ink">
+                    {item.name ?? item.phone}
+                  </span>
+                  <span className="text-xs text-muted">{item.ownerName ?? 'Não atribuído'}</span>
+                  {item.eligible ? (
+                    <Badge tone="success">Elegível</Badge>
+                  ) : (
+                    <span className="text-xs text-danger-700">{item.reasons.join('; ')}</span>
+                  )}
+                </label>
+              ))
+            )}
+          </div>
+
+          <div className="flex flex-wrap items-center gap-3">
+            <Button
+              variant="secondary"
+              disabled={busy || selectedIds.length === 0 || !batchCadenceId}
+              onClick={() => requestPreview(selectedIds)}
+            >
+              Prévia da seleção ({selectedIds.length})
+            </Button>
+            {preview ? (
+              <>
+                <span className="text-sm text-ink-soft">
+                  {preview.selected} selecionados · {preview.eligible} elegíveis ·{' '}
+                  {preview.ineligible.length} bloqueados
+                </span>
+                <Button
+                  disabled={busy || preview.eligible === 0}
+                  onClick={() => void confirmBatch()}
+                >
+                  Confirmar inscrição
+                </Button>
+              </>
+            ) : null}
+          </div>
+
+          {preview && preview.ineligible.length > 0 ? (
+            <ul className="space-y-1 text-xs text-muted">
+              {preview.ineligible.map((item) => (
+                <li key={item.leadId}>{item.reason}</li>
+              ))}
+            </ul>
+          ) : null}
         </CardContent>
       </Card>
     </div>

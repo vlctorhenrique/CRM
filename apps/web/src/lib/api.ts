@@ -3,6 +3,7 @@ import type {
   AiInsightView,
   AppointmentListResponse,
   AuthUser,
+  CadenceEligibleLeadsResponse,
   CadenceEnrollmentView,
   CadenceListResponse,
   ConversationListResponse,
@@ -145,6 +146,13 @@ export async function getEnrollments(
   query.set('limit', '100')
   const data = await authorizedGet<{ items: CadenceEnrollmentView[] }>(
     `/v1/cadence-enrollments?${query.toString()}`,
+  )
+  return data?.items ?? []
+}
+
+export async function getEligibleLeads(): Promise<CadenceEligibleLeadsResponse['items']> {
+  const data = await authorizedGet<CadenceEligibleLeadsResponse>(
+    '/v1/cadence-eligible-leads?limit=100',
   )
   return data?.items ?? []
 }
