@@ -5,13 +5,14 @@ import helmet from '@fastify/helmet'
 import rateLimit from '@fastify/rate-limit'
 import swagger from '@fastify/swagger'
 import swaggerUi from '@fastify/swagger-ui'
-import Fastify, { type FastifyInstance } from 'fastify'
+import Fastify, { type FastifyInstance, type FastifyRequest } from 'fastify'
 import type { Redis } from 'ioredis'
 import type { Pool } from 'pg'
 import { type AppConfig, loadConfig } from './config/env.js'
 import { type AppDatabase, createDatabase } from './db/client.js'
 import { createRedis } from './db/redis.js'
 import { AppError } from './lib/errors.js'
+import { redactRequestUrl } from './lib/log-redaction.js'
 import { registerAiRoutes } from './modules/ai/ai.routes.js'
 import { registerAppointmentRoutes } from './modules/appointments/appointments.routes.js'
 import { registerAuthRoutes } from './modules/auth/auth.routes.js'
@@ -77,6 +78,17 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
               '*.token',
             ],
             censor: '[redacted]',
+          },
+          serializers: {
+            req(request: FastifyRequest) {
+              return {
+                method: request.method,
+                url: redactRequestUrl(request.url),
+                host: request.hostname,
+                remoteAddress: request.ip,
+                remotePort: request.socket?.remotePort ?? 0,
+              }
+            },
           },
           ...(config.env === 'development'
             ? {
