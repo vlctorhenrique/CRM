@@ -171,9 +171,16 @@ Cancelamento usa `PATCH` com `status: "cancelled"` e `cancellationReason`.
 | POST   | `/v1/cadences`                          | admin/gerente | Cria com passos                        |
 | GET    | `/v1/cadences/:cadenceId`               | autenticado   | Detalhe com passos                     |
 | PATCH  | `/v1/cadences/:cadenceId`               | admin/gerente | Atualiza dados/status/passos em draft  |
-| POST   | `/v1/cadences/:cadenceId/enroll`        | admin/gerente | Inscreve lead elegível                 |
+| POST   | `/v1/cadences/:cadenceId/enroll`        | autenticado   | Inscreve próprio lead elegível         |
+| POST   | `/v1/cadences/:cadenceId/enroll-batch`  | autenticado   | Prévia ou inscrição em lote            |
+| GET    | `/v1/cadence-eligible-leads`            | autenticado   | Fila elegível com `reasons`            |
 | GET    | `/v1/cadence-enrollments`               | autenticado   | Filtra `leadId`, `cadenceId`, `status` |
 | PATCH  | `/v1/cadence-enrollments/:enrollmentId` | admin/gerente | Pausa/retoma/cancela                   |
+
+`enroll-batch` aceita `{ leadIds, preview }` ou `{ selectAll: true, preview }`. Com `preview=true`
+(padrão) retorna `{ selected, eligible, ineligible }` sem efeito; com `preview=false` inscreve os
+elegíveis e devolve `enrolled`/`failed`. A SDR vê e inscreve apenas os próprios leads; cada
+inscrição gera auditoria `cadence.enrolled` e muda o lead para `in_cadence`.
 
 ### Notifications
 
@@ -287,5 +294,7 @@ Body: `{ "phone": "...", "name?": "...", "text": "..." }`. Retorna `processed`, 
   somente campos vazios do lead e notifica a SDR nos casos fora de escopo.
 - E4 (Etapa 4 do README/PRD): Kanban agrupa status em etapas, movimentação via `PATCH` com RBAC,
   filtro `assignment` na fila da SDR e agendamento manual registrado sem integração UNO.
+- E5 (Etapa 5 do README/PRD): fila elegível explica bloqueios, prévia precede a inscrição em lote,
+  SDR limitada aos próprios leads, auditoria por inscrição e respeito a opt-out/agendamento/consentimento.
 - B4: relatórios filtram tenant/período/responsável; health expõe backlog do worker; contrato v1
   publicado; handoff atualizado.

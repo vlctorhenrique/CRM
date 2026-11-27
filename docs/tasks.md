@@ -30,13 +30,16 @@ cada merge. As Issues do GitHub espelham os mesmos IDs.
 | E3-03 | Tech lead  | Etapa 3: painel, contrato, README e handoff                            | `feat/e3-panel`            | E3-02        | #54   | #57 | done   |
 | E4-01 | Tech lead  | Etapa 4: helpers de atribuição e mudança de status                     | `feat/e4-kanban`           | E3-03        | #58   | #59 | done   |
 | E4-02 | Tech lead  | Etapa 4: Kanban, fila da SDR e documentação                            | `feat/e4-kanban-ui`        | E4-01        | #58   | #60 | done   |
+| E5-01 | Tech lead  | Etapa 5: elegibilidade, seleção em lote e prévia                       | `feat/e5-eligibility`      | E4-02        | #61   | #62 | done   |
+| E5-02 | Tech lead  | Etapa 5: painel de seleção, contrato e docs                            | `feat/e5-selection-ui`     | E5-01        | #61   | #63 | done   |
 
 ## Observações
 
-- Sincronizado em 26/11/2026: **26 de 26 tarefas `done`**. B5 validado com webhook assinado,
+- Sincronizado em 27/11/2026: **28 de 28 tarefas `done`**. B5 validado com webhook assinado,
   inbound processado, envio real e idempotência (issue #19/PR #53); Etapa 3 entregue com extração,
   classificação, resumo e modo silencioso (issue #54/PRs #55–#57); Etapa 4 entregue com Kanban,
-  fila de atribuição da SDR e agendamento manual existente (issue #58/PRs #59–#60).
+  fila de atribuição da SDR e agendamento manual existente (issue #58/PRs #59–#60); Etapa 5 com
+  fila de elegíveis, prévia e inscrição em lote (issue #61/PRs #62–#63).
 - Pós-release: #44 worker de IA, #45 notificações, #46 filtro de relatórios, #47/#49 docs,
   #50 proteção de credenciais, #51 correção da prévia, #52 redaction de logs, #53 fechamento do B5.
 - Estimativas: B0 2-3d; B1 4-5d; B2 6-8d; B3 4-5d; B4 2-3d; B5 3-5d; F 7-10d.

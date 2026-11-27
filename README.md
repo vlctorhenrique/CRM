@@ -17,7 +17,8 @@ CRM comercial para clínicas de estética e emagrecimento, construído a partir 
 - Fila de não atribuídos, claim/release de leads e consentimento explícito com evidência.
 - Pipeline/Kanban com colunas por etapa, movimentação rápida de status e filtro de atribuição.
 - Agendamentos manuais com RBAC, conflito de horário, transições de status e notificações.
-- Templates com variáveis validadas, cadências com inscrição elegível e worker no processo da API.
+- Templates com variáveis validadas, cadências com inscrição elegível, seleção em lote com prévia e
+  worker no processo da API.
 - Limites de horário comercial, retry com backoff, opt-out e pausa por resposta humana.
 - IA assistiva com extração, resumo e classificação; fallback determinístico e LLM opcional (`AI_MODE`).
 - Modo silencioso no atendimento humano: a IA continua analisando sem enviar mensagens e
@@ -204,8 +205,8 @@ Para recomeçar do zero, pare a API e remova `apps/api/.pglite-preview`.
 
 1. **Etapa 3 — concluída:** IA assistiva para extração, classificação e resumo, com modo silencioso.
 2. **Etapa 4 — concluída:** Pipeline/Kanban, permissões da SDR e registro manual de agendamento.
-3. **Etapa 5 — próxima:** Fila de elegíveis, seleção, templates, cadências de até sete dias, opt-out e idempotência.
-4. **Etapa 6** — Indicadores, notificações, backup monitorado e testes de aceitação.
+3. **Etapa 5 — concluída:** Fila de elegíveis, seleção, templates, cadências de até sete dias, opt-out e idempotência.
+4. **Etapa 6 — próxima:** Indicadores, notificações, backup monitorado e testes de aceitação.
 5. **Etapa 7** — Piloto com uma clínica e um número oficial.
 
 A integração com o UNO e a agenda nativa estão fora do MVP, conforme o adendo v1.1.
