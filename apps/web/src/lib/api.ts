@@ -80,12 +80,14 @@ async function authorizedGet<T>(path: string): Promise<T | null> {
 export async function getLeads(params: {
   search?: string | undefined
   status?: LeadStatus | undefined
+  assignment?: 'all' | 'mine' | 'unassigned' | undefined
   limit?: number | undefined
 }): Promise<LeadListResponse> {
   const query = new URLSearchParams()
 
   if (params.search) query.set('search', params.search)
   if (params.status) query.set('status', params.status)
+  if (params.assignment) query.set('assignment', params.assignment)
   query.set('limit', String(params.limit ?? 50))
 
   const data = await authorizedGet<LeadListResponse>(`/v1/leads?${query.toString()}`)
