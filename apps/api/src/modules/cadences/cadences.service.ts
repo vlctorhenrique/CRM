@@ -1,6 +1,10 @@
 import { randomUUID } from 'node:crypto'
 import type {
   AuthUser,
+  CadenceBatchPreview,
+  CadenceBatchResult,
+  CadenceEligibleLead,
+  CadenceEligibleLeadsResponse,
   CadenceEnrollmentStatus,
   CadenceEnrollmentView,
   CadenceListResponse,
@@ -11,7 +15,7 @@ import type {
   UpdateCadenceEnrollmentInput,
   UpdateCadenceInput,
 } from '@crm/shared'
-import { and, count, eq, inArray } from 'drizzle-orm'
+import { and, count, desc, eq, inArray } from 'drizzle-orm'
 import type { AppDatabase } from '../../db/client.js'
 import {
   appointments,
@@ -22,6 +26,7 @@ import {
   leads,
   messageTemplates,
   tenants,
+  users,
 } from '../../db/schema/index.js'
 import { recordAudit } from '../../lib/audit.js'
 import { AppError, notFound } from '../../lib/errors.js'
@@ -50,6 +55,10 @@ function toIso(value: Date | null | undefined): string | null {
 
 function canManage(user: AuthUser): boolean {
   return user.role === 'admin' || user.role === 'manager'
+}
+
+function canEnroll(user: AuthUser, ownerUserId: string | null): boolean {
+  return canManage(user) || (user.role === 'sdr' && ownerUserId === user.id)
 }
 
 async function loadCadence(
@@ -357,6 +366,186 @@ async function cancelPendingTasks(
     )
 }
 
+async function collectEligibility(
+  db: AppDatabase,
+  context: CadenceContext,
+  tenantId: string,
+  limit: number,
+): Promise<CadenceEligibleLead[]> {
+  const conditions = [eq(leads.tenantId, tenantId)]
+
+  if (context.user.role === 'sdr') {
+    conditions.push(eq(leads.ownerUserId, context.user.id))
+  }
+
+  const rows = await db
+    .select({
+      leadId: leads.id,
+      name: leads.name,
+      phone: leads.phoneNormalized,
+      status: leads.status,
+      ownerUserId: leads.ownerUserId,
+      ownerName: users.name,
+      interestProcedure: leads.interestProcedure,
+      consentStatus: leads.consentStatus,
+      optOutAt: leads.optOutAt,
+    })
+    .from(leads)
+    .leftJoin(users, eq(leads.ownerUserId, users.id))
+    .where(and(...conditions))
+    .orderBy(desc(leads.createdAt))
+    .limit(limit)
+
+  const activeEnrollments = await db
+    .select({ leadId: cadenceEnrollments.leadId })
+    .from(cadenceEnrollments)
+    .where(and(eq(cadenceEnrollments.tenantId, tenantId), eq(cadenceEnrollments.status, 'active')))
+  const enrolledLeadIds = new Set(activeEnrollments.map((item) => item.leadId))
+
+  const scheduledAppointments = await db
+    .select({ leadId: appointments.leadId })
+    .from(appointments)
+    .where(
+      and(
+        eq(appointments.tenantId, tenantId),
+        inArray(appointments.status, ['scheduled', 'confirmed']),
+      ),
+    )
+  const scheduledLeadIds = new Set(scheduledAppointments.map((item) => item.leadId))
+
+  return rows.map((row) => {
+    const reasons: string[] = []
+
+    if (row.consentStatus !== 'granted') {
+      reasons.push('Consentimento não registrado')
+    }
+
+    if (row.optOutAt || row.status === 'opt_out') {
+      reasons.push('Opt-out registrado')
+    }
+
+    if (row.status === 'lost') {
+      reasons.push('Lead perdido')
+    }
+
+    if (enrolledLeadIds.has(row.leadId)) {
+      reasons.push('Já está em cadência ativa')
+    }
+
+    if (scheduledLeadIds.has(row.leadId)) {
+      reasons.push('Possui agendamento ativo')
+    }
+
+    return {
+      leadId: row.leadId,
+      name: row.name,
+      phone: row.phone,
+      status: row.status,
+      ownerUserId: row.ownerUserId,
+      ownerName: row.ownerName,
+      interestProcedure: row.interestProcedure,
+      eligible: reasons.length === 0,
+      reasons,
+    }
+  })
+}
+
+export async function listEligibleLeads(
+  db: AppDatabase,
+  context: CadenceContext,
+  tenantId: string,
+  limit: number,
+): Promise<CadenceEligibleLeadsResponse> {
+  const items = await collectEligibility(db, context, tenantId, limit)
+  return { items, total: items.length }
+}
+
+export async function enrollLeadsBatch(
+  db: AppDatabase,
+  context: CadenceContext,
+  tenantId: string,
+  input: {
+    cadenceId: string
+    leadIds?: string[] | undefined
+    selectAll?: boolean | undefined
+    preview?: boolean | undefined
+  },
+  maxAttempts: number,
+  metadata: AuditMetadata,
+): Promise<CadenceBatchResult> {
+  const [cadence] = await db
+    .select()
+    .from(cadences)
+    .where(and(eq(cadences.id, input.cadenceId), eq(cadences.tenantId, tenantId)))
+    .limit(1)
+
+  if (cadence?.status !== 'active') {
+    throw new AppError(409, 'CADENCE_NOT_ACTIVE', 'A cadência não está ativa.')
+  }
+
+  const eligibleRows = await collectEligibility(db, context, tenantId, 200)
+  const selectedIds = [
+    ...new Set(
+      input.selectAll
+        ? eligibleRows.filter((item) => item.eligible).map((item) => item.leadId)
+        : (input.leadIds ?? []),
+    ),
+  ]
+  const byId = new Map(eligibleRows.map((item) => [item.leadId, item]))
+  const ineligible: Array<{ leadId: string; reason: string }> = []
+  const eligibleIds: string[] = []
+
+  for (const leadId of selectedIds) {
+    const item = byId.get(leadId)
+
+    if (!item) {
+      ineligible.push({ leadId, reason: 'Lead não encontrado ou sem permissão' })
+      continue
+    }
+
+    if (!item.eligible) {
+      ineligible.push({ leadId, reason: item.reasons.join('; ') })
+      continue
+    }
+
+    eligibleIds.push(leadId)
+  }
+
+  const preview: CadenceBatchPreview = {
+    selected: selectedIds.length,
+    eligible: eligibleIds.length,
+    ineligible,
+  }
+
+  if (input.preview !== false) {
+    return { preview, enrolled: 0, failed: [] }
+  }
+
+  const failed: Array<{ leadId: string; reason: string }> = []
+  let enrolled = 0
+
+  for (const leadId of eligibleIds) {
+    try {
+      await enrollLead(
+        db,
+        context,
+        tenantId,
+        { leadId, cadenceId: input.cadenceId },
+        maxAttempts,
+        metadata,
+      )
+      enrolled += 1
+    } catch (error) {
+      failed.push({
+        leadId,
+        reason: error instanceof Error ? error.message : 'Falha ao inscrever o lead.',
+      })
+    }
+  }
+
+  return { preview, enrolled, failed }
+}
+
 export async function enrollLead(
   db: AppDatabase,
   context: CadenceContext,
@@ -381,7 +570,7 @@ export async function enrollLead(
     .where(and(eq(leads.id, input.leadId), eq(leads.tenantId, tenantId)))
     .limit(1)
 
-  if (!lead || !canManage(context.user)) {
+  if (!lead || !canEnroll(context.user, lead.ownerUserId)) {
     throw notFound('Lead não encontrado.')
   }
 
@@ -489,6 +678,11 @@ export async function enrollLead(
         updatedAt: now,
       })),
     )
+
+    await tx
+      .update(leads)
+      .set({ status: 'in_cadence', updatedAt: now })
+      .where(and(eq(leads.id, input.leadId), eq(leads.tenantId, tenantId)))
   })
 
   await recordAudit(db, {

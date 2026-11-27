@@ -238,4 +238,73 @@ describe('cadências e inscrições', () => {
     })
     expect(missing.statusCode).toBe(404)
   })
+
+  let eligibleLeadId: string
+
+  it('lista elegíveis e informa o motivo de cada bloqueio', async () => {
+    const eligible = await context.app.inject({
+      method: 'POST',
+      url: '/v1/leads',
+      headers: { cookie: adminCookie },
+      payload: { name: 'Elegível Lote', phone: '11955555555', ownerUserId: admin.id },
+    })
+    eligibleLeadId = eligible.json().lead.id as string
+
+    await context.app.inject({
+      method: 'POST',
+      url: `/v1/leads/${eligibleLeadId}/consent`,
+      headers: { cookie: adminCookie },
+      payload: { status: 'granted', evidence: 'Contato telefônico', textVersion: 'v1' },
+    })
+
+    const blocked = await context.app.inject({
+      method: 'POST',
+      url: '/v1/leads',
+      headers: { cookie: adminCookie },
+      payload: { name: 'Sem Consentimento Lote', phone: '11944444444', ownerUserId: admin.id },
+    })
+
+    const list = await context.app.inject({
+      method: 'GET',
+      url: '/v1/cadence-eligible-leads',
+      headers: { cookie: adminCookie },
+    })
+    expect(list.statusCode).toBe(200)
+
+    const item = list.json().items.find((row: { leadId: string }) => row.leadId === eligibleLeadId)
+    const blockedItem = list
+      .json()
+      .items.find((row: { leadId: string }) => row.leadId === blocked.json().lead.id)
+    expect(item?.eligible).toBe(true)
+    expect(blockedItem?.eligible).toBe(false)
+    expect(blockedItem?.reasons).toContain('Consentimento não registrado')
+  })
+
+  it('faz prévia, inscreve em lote e registra auditoria', async () => {
+    const preview = await context.app.inject({
+      method: 'POST',
+      url: `/v1/cadences/${cadenceId}/enroll-batch`,
+      headers: { cookie: adminCookie },
+      payload: { leadIds: [eligibleLeadId], preview: true },
+    })
+    expect(preview.statusCode).toBe(200)
+    expect(preview.json().preview.eligible).toBe(1)
+    expect(preview.json().enrolled).toBe(0)
+
+    const confirmed = await context.app.inject({
+      method: 'POST',
+      url: `/v1/cadences/${cadenceId}/enroll-batch`,
+      headers: { cookie: adminCookie },
+      payload: { leadIds: [eligibleLeadId], preview: false },
+    })
+    expect(confirmed.statusCode).toBe(200)
+    expect(confirmed.json().enrolled).toBe(1)
+
+    const detail = await context.app.inject({
+      method: 'GET',
+      url: `/v1/leads/${eligibleLeadId}`,
+      headers: { cookie: adminCookie },
+    })
+    expect(detail.json().lead.status).toBe('in_cadence')
+  })
 })

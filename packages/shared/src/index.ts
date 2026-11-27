@@ -886,6 +886,35 @@ export interface CadenceEnrollmentView {
   createdAt: string
 }
 
+export interface CadenceEligibleLead {
+  leadId: string
+  name: string | null
+  phone: string
+  status: LeadStatus
+  ownerUserId: string | null
+  ownerName: string | null
+  interestProcedure: string | null
+  eligible: boolean
+  reasons: string[]
+}
+
+export interface CadenceEligibleLeadsResponse {
+  items: CadenceEligibleLead[]
+  total: number
+}
+
+export interface CadenceBatchPreview {
+  selected: number
+  eligible: number
+  ineligible: Array<{ leadId: string; reason: string }>
+}
+
+export interface CadenceBatchResult {
+  preview: CadenceBatchPreview
+  enrolled: number
+  failed: Array<{ leadId: string; reason: string }>
+}
+
 export interface NotificationView {
   id: string
   type: NotificationType
