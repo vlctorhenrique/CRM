@@ -185,6 +185,13 @@ export interface HealthResponse {
     cadenceTasksStale: number
     aiInsightsPending: number
   }
+  backup?: {
+    configured: boolean
+    lastRunAt: string | null
+    lastStatus: 'ok' | 'failed' | 'unknown'
+    ageHours: number | null
+    stale: boolean
+  }
   timestamp: string
 }
 

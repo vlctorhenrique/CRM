@@ -43,6 +43,8 @@ export function testConfig(): AppConfig {
     aiApiKey: null,
     aiDailyLimit: 200,
     aiTimeoutMs: 15_000,
+    backupStatusFile: null,
+    backupStaleHours: 26,
     version: 'test',
     whatsappMode: 'dry-run',
     whatsappVerifyToken: 'test-verify-token',
@@ -61,14 +63,14 @@ export interface TestContext {
   close: () => Promise<void>
 }
 
-export async function createTestContext(): Promise<TestContext> {
+export async function createTestContext(config: AppConfig = testConfig()): Promise<TestContext> {
   const client = new PGlite()
   const pgliteDb = drizzle(client, { schema })
 
   await migrate(pgliteDb, { migrationsFolder })
 
   const db = pgliteDb as unknown as AppDatabase
-  const app = await buildApp({ config: testConfig(), db, redis: null })
+  const app = await buildApp({ config, db, redis: null })
   await app.ready()
 
   return {
