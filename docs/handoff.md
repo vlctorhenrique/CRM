@@ -8,7 +8,7 @@ seção. Ele não contém tokens nem segredos.
 - **Etapa 1 — Fundação:** concluída; commits originais `198fd4b`/`350be1c` preservados na
   branch `backup/local-main-350be1c`.
 - **Etapa 2 — CRM e WhatsApp:** concluída e reconciliada no PR #1.
-- **Etapa 2 — validação live:** pendente; falta apenas `WHATSAPP_APP_SECRET`.
+- **Etapa 2 — validação live:** concluída em 26/11/2026 (webhook, envio e idempotência validados).
 - **B0 — Fundação da Etapa 3:** concluído e mergeado na `main` em `09b7703` (PR #23); issues
   #2–#4 fechadas.
 - **SD-01 — Utilitários puros:** concluído e mergeado em `80a815d` (PR #22): extrator
@@ -21,21 +21,23 @@ seção. Ele não contém tokens nem segredos.
 - **B3 — IA assistiva:** concluído (PRs #37–#38): insights com fallback/LLM opcional e hook no
   webhook; `confidence` persistido como 0-100.
 - **B4 — Relatórios e robustez:** concluído em `e4667e6` (PR #39) e `90adf8c` (PR #40).
-- **B5 — Meta live:** bloqueado; faltam `WHATSAPP_APP_SECRET`, `WHATSAPP_ACCESS_TOKEN`,
-  `WHATSAPP_PHONE_NUMBER_ID` e `WHATSAPP_WABA_ID` da Meta.
+- **B5 — Meta live:** concluído. Credenciais de teste carregadas, webhook verificado, inbound
+  processado, resposta automática e envio manual enviados pela Cloud API, e duplicata ignorada.
+  Issue #19 fechada no PR #53.
 - **F — Frontend:** concluído. SD-08 em `0d50d86` (PR #41) entregou agenda, cadências,
   relatórios e insights; TL-12 em `c7f6645` (PR #42) finalizou shell, clients e release.
 - **Pós-release:** PR #44 ligou o worker de IA no servidor; #45 entregou página de notificações;
   #46 adicionou filtro de período nos relatórios; #47 atualizou handoff/README; #48 sincronizou o
-  board. `verify` e `test:e2e` verdes.
+  board; #49 estabilizou referências; #50 protegeu as credenciais de teste; #51 corrigiu a prévia;
+  #52 redactionou segredos em URLs de log; #53 fechou B5. `verify` e `test:e2e` verdes.
 - **Proteção de `main`:** não disponível no plano atual do repositório privado; PR + CI `verify`
   continuam obrigatórios por convenção até o repo ser público/Pro.
 
 Branch atual do tech lead: `main`. Como o dev sênior está fora, o tech lead assumiu todas as
 tarefas; o worktree `C:\Users\victor\CRM-senior` permanece disponível.
 
-`main` local = `origin/main`, sincronizada após o PR #48. O arquivo `apps/api/.env` existe
-localmente, está ignorado pelo Git e guarda a configuração live.
+`main` local = `origin/main`. O arquivo `apps/api/.env` existe localmente, está ignorado pelo Git
+e guarda a configuração live.
 
 ### O que entrou no B0
 
@@ -117,48 +119,43 @@ localmente, está ignorado pelo Git e guarda a configuração live.
 
 ## Estado da validação live
 
-Configuração local em `apps/api/.env` (ignorado pelo Git):
+Configuração local em `apps/api/.env` (ignorado pelo Git): `WHATSAPP_MODE=live`, verify token, app
+secret, access token temporário, phone number ID, WABA ID, número de teste e `PREVIEW_DATA_DIR`
+apontando para o banco PGlite live temporário. Nenhum valor de segredo é registrado aqui.
 
-- `WHATSAPP_MODE=live`
-- `WHATSAPP_VERIFY_TOKEN`: preenchido com token aleatório de 64 caracteres.
-- `WHATSAPP_PHONE_NUMBER`: preenchido com o número de teste da Meta.
-- `WHATSAPP_APP_SECRET`: **vazio** (único campo pendente).
-- `WHATSAPP_ACCESS_TOKEN`: preenchido com o token temporário de teste (não versionado).
-- `WHATSAPP_PHONE_NUMBER_ID`: preenchido com o phone number ID do número de teste.
-- `WHATSAPP_WABA_ID`: preenchido com a conta de mensagens da Meta.
-- `PREVIEW_DATA_DIR` aponta para o banco PGlite live temporário.
+O arquivo `docs/phone number de teste.txt` contém credenciais de teste e está no `.gitignore`;
+deve ser removido do workspace. O token temporário expira em poucas horas e precisa ser gerado
+novamente na Meta e atualizado em `apps/api/.env` antes de cada nova rodada de validação.
 
-O arquivo `docs/phone number de teste.txt` contém as credenciais de teste e foi adicionado ao
-`.gitignore`; deve ser removido do workspace ao final da validação. A consulta à Graph API com o
-token de teste confirmou o número (`verified_name=Test Number`) e o phone number ID.
+Resultado da validação em 26/11/2026:
 
-A API na porta 3333 ainda está rodando o processo antigo em dry-run. Ela precisa ser reiniciada
-depois de preencher as credenciais para carregar `apps/api/.env` e o código novo da prévia.
+- `GET /webhooks/whatsapp`: challenge aceito com o verify token; token errado retorna 403.
+- `POST /webhooks/whatsapp`: assinatura inválida retorna 401; assinatura válida com HMAC do app
+  secret processou o evento.
+- Inbound assinado criou lead e conversa; resposta automática foi enviada pela Cloud API
+  (`status=sent`, com `providerMessageId`).
+- Reenvio do mesmo `id` de mensagem retornou `processed=0, ignored=1` (idempotência).
+- `POST /v1/leads/:id/messages` enviou mensagem manual com `status=sent`.
+- Logs de requisição redactionam `hub.verify_token`, `access_token` e parâmetros sensíveis.
 
-Túnel HTTPS atual (Cloudflare Quick Tunnel):
-
-- URL: `https://babies-assists-released-seems.trycloudflare.com`
-- Callback para a Meta: `https://babies-assists-released-seems.trycloudflare.com/webhooks/whatsapp`
-- O túnel encaminha para `http://127.0.0.1:3333`.
-- O URL muda se o `cloudflared` for reiniciado; nesse caso atualize a Meta.
-- Binário: `C:\Users\victor\AppData\Local\Temp\opencode\cloudflared.exe`
-- Log: `C:\Users\victor\AppData\Local\Temp\opencode\crm-cloudflared.log`
-
-O token de verificação está em `apps/api/.env`; não copie o valor para este documento nem para o
-Git. Se precisar de outro, gere 32 bytes aleatórios e atualize a Meta.
+O túnel Cloudflare usado na validação foi encerrado ao final; para repetir o teste, suba um novo
+túnel e atualize o callback na Meta. A API local permanece em `http://127.0.0.1:3333`.
 
 ## Como obter as credenciais da Meta
 
 1. Acesse `https://developers.facebook.com/apps` com a conta administradora.
 2. Se necessário, crie um app com o caso de uso **“Conectar com clientes pelo WhatsApp”** e
    vincule um portfólio empresarial.
-3. Abra **WhatsApp → Configuração da API** (API Setup).
+3. Em painéis novos, abra **Use cases → Connect with customers through WhatsApp → Customize →
+   Connect on WhatsApp → Basic setup → Step 1: Try it out**; em painéis antigos, **WhatsApp →
+   Configuração da API** (API Setup).
 4. Selecione o número de teste em **From**. A tela mostra:
    - **Phone number ID** → `WHATSAPP_PHONE_NUMBER_ID`;
    - **WhatsApp Business Account ID / Messaging account ID** → `WHATSAPP_WABA_ID`;
    - **Generate access token** → `WHATSAPP_ACCESS_TOKEN` temporário (começa com `EAA...`).
-5. Em **To → Manage phone number list**, adicione e confirme o WhatsApp pessoal que receberá o
-   teste. O número pessoal é o destinatário, não o número da API.
+5. Em **Send a message from your test number → To → manage/add recipient**, adicione e confirme o
+   WhatsApp que receberá o teste. Sem destinatário autorizado, a Cloud API responde
+   `(#131005) Access denied`. O número pessoal é o destinatário, não o número da API.
 6. Abra **Configurações do app → Básico** e copie **App secret** → `WHATSAPP_APP_SECRET`.
 7. Preencha `apps/api/.env`. Não cole tokens no chat nem em arquivos versionados.
 
@@ -166,32 +163,22 @@ O token temporário expira em poucas horas. Para algo duradouro, criar um usuár
 Business Manager, atribuir o app e a WABA e gerar token com `whatsapp_business_messaging`,
 `whatsapp_business_management` e `business_management`.
 
-## Próximos passos da validação live
+## Checklist da validação live (executado)
 
-1. Preencher as quatro credenciais pendentes em `apps/api/.env`.
-2. Trocar `WHATSAPP_PHONE_NUMBER` pelo número de teste exibido na Meta.
-3. Opcional: validar o número e a WABA na Graph API:
-   `GET https://graph.facebook.com/v23.0/{PHONE_NUMBER_ID}?fields=display_phone_number,verified_name&access_token=...`
-4. Parar a API atual na porta 3333 e iniciar novamente com `npm.cmd run preview:api`.
-   O novo banco live será criado vazio, com tenant/usuários/leads demo e a conta WhatsApp já usando
-   o phone number ID real.
-5. Confirmar no log que a API subiu em modo live e que o seed criou a conta.
-6. Na Meta, abrir **WhatsApp → Configuração → Webhook → Editar** e configurar:
-   - Callback URL do túnel + `/webhooks/whatsapp`;
-   - o verify token de `apps/api/.env`;
-   - campo `messages`.
-     A API precisa já estar reiniciada em live para a verificação funcionar.
-7. Se necessário, assinar o app na WABA:
-   `POST https://graph.facebook.com/v23.0/{WABA_ID}/subscribed_apps` com o access token.
-8. Enviar uma mensagem de outro WhatsApp para o número de teste.
-9. Verificar:
-   - webhook aceito e evento processado;
-   - lead criado/deduplicado;
-   - conversa e mensagem no painel;
-   - resposta automática recebida no WhatsApp;
-   - segundo webhook repetido sem duplicar dados.
-10. Registrar o resultado, parar o túnel, voltar a prévia para dry-run e decidir se a alteração da
-    prévia live será commitada.
+1. Credenciais preenchidas em `apps/api/.env` e token confirmado na Graph API
+   (`verified_name=Test Number`).
+2. API reiniciada com `npm.cmd run preview:api` em `WHATSAPP_MODE=live`.
+3. Webhook configurado na Meta com callback HTTPS, verify token e campo `messages`; app inscrito
+   na WABA.
+4. Assinatura HMAC validada: POST sem assinatura correta retorna 401.
+5. Inbound assinado processado: lead e conversa criados, mensagem inbound gravada.
+6. Resposta automática e envio manual retornaram `status=sent` com `providerMessageId` real.
+7. Reenvio do mesmo evento retornou `processed=0, ignored=1`.
+8. Túnel encerrado; segredos não versionados nem registrados em logs/documentação.
+
+Para repetir, gere um token novo, atualize `apps/api/.env`, reinicie a API e suba um novo túnel.
+Use `taskkill` apenas com encerramento graceful: o PGlite pode perder escritas recentes se o
+processo for morto com `/F`.
 
 ## Comandos úteis
 
@@ -213,7 +200,7 @@ npm.cmd run build
 
 Processos e logs atuais:
 
-- API: porta 3333, log em `C:\Users\victor\AppData\Local\Temp\opencode\crm-preview-api.log`.
+- API: porta 3333, log em `C:\Users\victor\AppData\Local\Temp\opencode\crm-live-api.log`.
 - Web: porta 3000, log em `C:\Users\victor\AppData\Local\Temp\opencode\crm-preview-web.log`.
 - Túnel: `cloudflared`, log em `C:\Users\victor\AppData\Local\Temp\opencode\crm-cloudflared.log`.
 
@@ -251,6 +238,5 @@ No Windows, para encerrar a API: localizar o PID com
 
 ## Prompt para a próxima seção
 
-> Leia `docs/handoff.md` e continue a validação live da Etapa 2 a partir do estado atual. Não
-> exponha nem versione tokens. Primeiro confira `git status` e quais campos de `apps/api/.env`
-> estão preenchidos.
+> Leia `docs/handoff.md`: B0–B5 e F estão concluídos. Para retomar a integração live, gere um token
+> novo, reinicie a prévia e configure um novo túnel; nunca exponha nem versione tokens.
