@@ -124,4 +124,20 @@ describe('hook de IA no webhook', () => {
       .where(and(eq(aiInsights.tenantId, tenant.id), eq(aiInsights.type, 'extraction')))
     expect(afterDuplicate).toHaveLength(1)
   })
+
+  it('continua enfileirando análise quando a IA está silenciosa', async () => {
+    await context.db
+      .update(conversations)
+      .set({ aiEnabled: false })
+      .where(and(eq(conversations.tenantId, tenant.id)))
+
+    const response = await send(randomUUID(), 'Quero botox no rosto, quanto custa?')
+    expect(response.statusCode).toBe(200)
+
+    const insights = await context.db
+      .select()
+      .from(aiInsights)
+      .where(and(eq(aiInsights.tenantId, tenant.id), eq(aiInsights.type, 'extraction')))
+    expect(insights).toHaveLength(2)
+  })
 })

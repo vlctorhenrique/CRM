@@ -209,6 +209,8 @@ async function notifyOwner(
   tenantId: string,
   leadId: string,
   insightId: string,
+  title = 'Insight de IA disponível',
+  body = 'Uma nova análise assistiva foi concluída para um lead.',
 ): Promise<void> {
   const [lead] = await db
     .select({ ownerUserId: leads.ownerUserId })
@@ -225,12 +227,56 @@ async function notifyOwner(
     tenantId,
     userId: lead.ownerUserId,
     type: 'ai_insight',
-    title: 'Insight de IA disponível',
-    body: 'Uma nova análise assistiva foi concluída para um lead.',
+    title,
+    body,
     entityType: 'ai_insight',
     entityId: insightId,
     createdAt: new Date(),
   })
+}
+
+async function applyExtractionToLead(
+  db: AppDatabase,
+  tenantId: string,
+  leadId: string,
+  extraction: ReturnType<typeof extractLeadInfo>,
+): Promise<void> {
+  const [lead] = await db
+    .select()
+    .from(leads)
+    .where(and(eq(leads.id, leadId), eq(leads.tenantId, tenantId)))
+    .limit(1)
+
+  if (!lead) {
+    return
+  }
+
+  const values: Partial<typeof leads.$inferInsert> = {}
+
+  if (!lead.interestProcedure && extraction.procedure) {
+    values.interestProcedure = extraction.procedure
+  }
+
+  if (!lead.objective && extraction.objective) {
+    values.objective = extraction.objective
+  }
+
+  if (!lead.bodyRegion && extraction.bodyRegion) {
+    values.bodyRegion = extraction.bodyRegion
+  }
+
+  if (!lead.previousTreatment && extraction.previousTreatment !== null) {
+    values.previousTreatment = extraction.previousTreatment ? 'sim' : 'nao'
+  }
+
+  if (Object.keys(values).length === 0) {
+    return
+  }
+
+  await db
+    .update(leads)
+    .set({ ...values, updatedAt: new Date() })
+    .where(and(eq(leads.id, leadId), eq(leads.tenantId, tenantId)))
 }
 
 export async function processAiInsights(
@@ -287,13 +333,22 @@ export async function processAiInsights(
       .select()
       .from(messages)
       .where(
-        and(
-          eq(messages.tenantId, locked.tenantId),
-          eq(messages.leadId, locked.leadId),
-          eq(messages.direction, 'inbound'),
-        ),
+        locked.messageId
+          ? and(eq(messages.tenantId, locked.tenantId), eq(messages.id, locked.messageId))
+          : and(
+              eq(messages.tenantId, locked.tenantId),
+              eq(messages.leadId, locked.leadId),
+              eq(messages.direction, 'inbound'),
+            ),
       )
       .orderBy(desc(messages.createdAt))
+      .limit(1)
+    const [conversation] = await db
+      .select({ aiEnabled: conversations.aiEnabled })
+      .from(conversations)
+      .where(
+        and(eq(conversations.tenantId, locked.tenantId), eq(conversations.leadId, locked.leadId)),
+      )
       .limit(1)
 
     if (!lead || !message?.body) {
@@ -322,11 +377,14 @@ export async function processAiInsights(
       errorMessage = error instanceof Error ? error.message.slice(0, 500) : 'Falha no LLM'
     }
 
+    const silent = conversation?.aiEnabled === false
+    const insightResult = { ...extraction, silent }
+
     await db
       .update(aiInsights)
       .set({
         status: 'completed',
-        result: extraction as unknown as Record<string, unknown>,
+        result: insightResult as unknown as Record<string, unknown>,
         confidence: Math.round(extraction.confidence * 100),
         model,
         error: errorMessage,
@@ -334,7 +392,20 @@ export async function processAiInsights(
       })
       .where(eq(aiInsights.id, locked.id))
 
+    await applyExtractionToLead(db, locked.tenantId, locked.leadId, extraction)
     await notifyOwner(db, locked.tenantId, locked.leadId, locked.id)
+
+    if (extraction.requiresSdr) {
+      await notifyOwner(
+        db,
+        locked.tenantId,
+        locked.leadId,
+        locked.id,
+        'Dúvida encaminhada à SDR',
+        'A IA identificou uma mensagem que exige atendimento humano.',
+      )
+    }
+
     result.completed += 1
   }
 

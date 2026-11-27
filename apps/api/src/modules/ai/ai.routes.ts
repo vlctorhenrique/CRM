@@ -54,7 +54,7 @@ export async function registerAiRoutes(app: FastifyInstance): Promise<void> {
     '/v1/conversations/:conversationId/ai',
     {
       preHandler: app.requireRole(['admin', 'manager']),
-      schema: { tags: ['IA'], summary: 'Habilita ou desabilita IA na conversa' },
+      schema: { tags: ['IA'], summary: 'Define IA ativa ou silenciosa na conversa' },
     },
     async (request, reply) => {
       const auth = getAuthContext(request)
