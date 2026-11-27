@@ -2,7 +2,7 @@
 
 CRM comercial para clínicas de estética e emagrecimento, construído a partir do PRD v1.1. O produto começa com uma clínica, mas nasce preparado para operação multiempresa.
 
-**Status atual: B0–B5, frontend e Etapa 3 (IA assistiva) entregues; integração live da Meta validada.**
+**Status atual: B0–B5, frontend e Etapas 3–7 entregues; integração live da Meta validada e piloto pronto para número oficial.**
 
 ## O que já existe
 

@@ -51,10 +51,11 @@ const emptySummary: DashboardSummary = {
 const roadmap = [
   { stage: 'Etapa 1', title: 'Fundação', status: 'Concluída', done: true },
   { stage: 'Etapa 2', title: 'CRM e WhatsApp', status: 'Concluída', done: true },
-  { stage: 'Etapa 3', title: 'IA assistiva', status: 'Próxima', done: false },
-  { stage: 'Etapa 4', title: 'SDR e agendamento', status: 'Planejada', done: false },
-  { stage: 'Etapa 5', title: 'Cadências', status: 'Planejada', done: false },
-  { stage: 'Etapa 6', title: 'Indicadores e robustez', status: 'Planejada', done: false },
+  { stage: 'Etapa 3', title: 'IA assistiva', status: 'Concluída', done: true },
+  { stage: 'Etapa 4', title: 'Pipeline e SDR', status: 'Concluída', done: true },
+  { stage: 'Etapa 5', title: 'Cadências', status: 'Concluída', done: true },
+  { stage: 'Etapa 6', title: 'Indicadores e robustez', status: 'Concluída', done: true },
+  { stage: 'Etapa 7', title: 'Piloto', status: 'Pronta para o piloto', done: true },
 ]
 
 export default async function DashboardPage() {
@@ -359,8 +360,40 @@ export default async function DashboardPage() {
                   {health?.checks.redis === 'ok'
                     ? 'Operacional'
                     : health?.checks.redis === 'disabled'
-                      ? 'Aguardando Etapa 5'
+                      ? 'Fila no PostgreSQL'
                       : 'Verificar'}
+                </Badge>
+              </div>
+              <div className="flex items-center justify-between rounded-xl border border-line bg-surface-muted px-3.5 py-3">
+                <span className="flex items-center gap-2 text-sm text-ink-soft">
+                  <RefreshCw className="size-4 text-muted" aria-hidden="true" />
+                  Jobs pendentes
+                </span>
+                <Badge tone={(health?.backlog?.cadenceTasksPending ?? 0) > 0 ? 'sand' : 'success'}>
+                  {health?.backlog
+                    ? health.backlog.cadenceTasksPending + health.backlog.aiInsightsPending
+                    : '—'}
+                </Badge>
+              </div>
+              <div className="flex items-center justify-between rounded-xl border border-line bg-surface-muted px-3.5 py-3">
+                <span className="flex items-center gap-2 text-sm text-ink-soft">
+                  <ShieldCheck className="size-4 text-muted" aria-hidden="true" />
+                  Backup externo
+                </span>
+                <Badge
+                  tone={
+                    !health?.backup?.configured
+                      ? 'neutral'
+                      : health.backup.stale
+                        ? 'danger'
+                        : 'success'
+                  }
+                >
+                  {!health?.backup?.configured
+                    ? 'Não monitorado'
+                    : health.backup.stale
+                      ? 'Atenção'
+                      : 'Em dia'}
                 </Badge>
               </div>
             </div>
