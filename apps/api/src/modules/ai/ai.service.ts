@@ -5,7 +5,11 @@ import type { AppConfig } from '../../config/env.js'
 import type { AppDatabase } from '../../db/client.js'
 import { aiInsights, conversations, leads, messages, notifications } from '../../db/schema/index.js'
 import { AppError, notFound } from '../../lib/errors.js'
-import { extractLeadInfo } from '../ai/extraction.js'
+import {
+  AI_MESSAGE_CLASSIFICATIONS,
+  type AiMessageClassification,
+  extractLeadInfo,
+} from '../ai/extraction.js'
 
 export interface AiContext {
   user: AuthUser
@@ -159,7 +163,7 @@ async function llmExtraction(
         {
           role: 'system',
           content:
-            'Extraia procedimento, objetivo, região do corpo, tratamento anterior, resumo e confiança (0-1) como JSON.',
+            'Extraia procedimento, objetivo, região do corpo, tratamento anterior, resumo, classificação (qualification, scheduling, clinical_question, pricing_question, out_of_scope ou other), requiresSdr e confiança (0-1) como JSON. Não invente dados.',
         },
         { role: 'user', content: text },
       ],
@@ -177,6 +181,12 @@ async function llmExtraction(
   const raw = payload.choices?.[0]?.message?.content
   const parsed = raw ? (JSON.parse(raw) as Record<string, unknown>) : {}
 
+  const classification: AiMessageClassification = AI_MESSAGE_CLASSIFICATIONS.includes(
+    parsed.classification as AiMessageClassification,
+  )
+    ? (parsed.classification as AiMessageClassification)
+    : 'other'
+
   return {
     procedure: typeof parsed.procedure === 'string' ? parsed.procedure : null,
     objective: typeof parsed.objective === 'string' ? parsed.objective : null,
@@ -184,6 +194,11 @@ async function llmExtraction(
     previousTreatment:
       typeof parsed.previousTreatment === 'boolean' ? parsed.previousTreatment : null,
     summary: typeof parsed.summary === 'string' ? parsed.summary : text.slice(0, 280),
+    classification,
+    requiresSdr:
+      classification === 'clinical_question' ||
+      classification === 'pricing_question' ||
+      classification === 'out_of_scope',
     confidence:
       typeof parsed.confidence === 'number' ? Math.min(Math.max(parsed.confidence, 0), 1) : 0.5,
   }
