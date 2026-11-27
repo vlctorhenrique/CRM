@@ -198,6 +198,11 @@ Teste a restauração periodicamente em um ambiente separado:
 
 Backup na mesma VPS não atende ao requisito de recuperação. Defina retenção externa e monitore as falhas do cron.
 
+O script grava `backups/last-backup.json` com `status` (`ok`/`failed`) e `at`. Configure
+`BACKUP_STATUS_FILE=/app/backups/last-backup.json` no `.env` para que `GET /health` exponha `backup`
+com idade e `stale` quando o último backup ultrapassar `BACKUP_STALE_HOURS` (padrão 26h). Alerte
+também sobre `backup.stale=true` no monitor externo.
+
 ## 6. Operação
 
 Comandos úteis:
