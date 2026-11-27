@@ -127,4 +127,25 @@ describe('relatórios', () => {
     expect(appointments.json().items).toHaveLength(1)
     expect(appointments.json().items[0].total).toBe(2)
   })
+
+  it('reporta indicadores do piloto com isolamento por responsável', async () => {
+    const adminReport = await context.app.inject({
+      method: 'GET',
+      url: '/v1/reports/pilot',
+      headers: { cookie: adminCookie },
+    })
+    expect(adminReport.statusCode).toBe(200)
+    expect(adminReport.json().leads).toBe(2)
+    expect(adminReport.json().appointments).toBe(2)
+    expect(adminReport.json().optOuts).toBe(0)
+    expect(adminReport.json().firstResponseMinutes).toBeNull()
+
+    const sdrReport = await context.app.inject({
+      method: 'GET',
+      url: '/v1/reports/pilot',
+      headers: { cookie: sdrCookie },
+    })
+    expect(sdrReport.json().leads).toBe(1)
+    expect(sdrReport.json().appointments).toBe(1)
+  })
 })

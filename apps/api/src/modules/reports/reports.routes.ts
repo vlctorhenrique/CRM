@@ -2,7 +2,12 @@ import { listReportsQuerySchema } from '@crm/shared'
 import type { FastifyInstance } from 'fastify'
 import { parseInput } from '../../lib/validation.js'
 import { getAuthContext } from '../../plugins/auth.js'
-import { getAppointmentReport, getCadenceReport, getReportsSummary } from './reports.service.js'
+import {
+  getAppointmentReport,
+  getCadenceReport,
+  getPilotReport,
+  getReportsSummary,
+} from './reports.service.js'
 
 export async function registerReportRoutes(app: FastifyInstance): Promise<void> {
   app.get(
@@ -17,6 +22,19 @@ export async function registerReportRoutes(app: FastifyInstance): Promise<void> 
       return reply.send(
         await getReportsSummary(app.db, { user: auth.user }, auth.tenant.id, filters),
       )
+    },
+  )
+
+  app.get(
+    '/v1/reports/pilot',
+    {
+      preHandler: app.authenticate,
+      schema: { tags: ['Relatórios'], summary: 'Indicadores do piloto' },
+    },
+    async (request, reply) => {
+      const auth = getAuthContext(request)
+      const filters = parseInput(listReportsQuerySchema, request.query)
+      return reply.send(await getPilotReport(app.db, { user: auth.user }, auth.tenant.id, filters))
     },
   )
 

@@ -985,3 +985,17 @@ export interface ReportsSummary {
     failed: number
   }
 }
+
+export interface PilotReport {
+  period: { from: string; to: string }
+  leads: number
+  qualifiedLeads: number
+  qualificationRate: number
+  firstResponseMinutes: number | null
+  appointments: number
+  cadenceEnrollments: number
+  cadenceResponses: number
+  cadenceResponseRate: number
+  optOuts: number
+  failedMessages: number
+}

@@ -1,4 +1,4 @@
-import type { AuthUser, ListReportsQuery, ReportsSummary } from '@crm/shared'
+import type { AuthUser, ListReportsQuery, PilotReport, ReportsSummary } from '@crm/shared'
 import { and, count, eq, gte, lt } from 'drizzle-orm'
 import type { AppDatabase } from '../../db/client.js'
 import {
@@ -144,6 +144,169 @@ export async function getReportsSummary(
       tasksFailed: taskCounts.get('failed') ?? 0,
     },
     messaging: { inbound, outbound, failed: failedMessages },
+  }
+}
+
+export async function getPilotReport(
+  db: AppDatabase,
+  context: ReportContext,
+  tenantId: string,
+  filters: ListReportsQuery,
+): Promise<PilotReport> {
+  const { from, to } = periodBounds(filters)
+  const owner = ownerFilter(context, filters)
+
+  const leadConditions = [
+    eq(leads.tenantId, tenantId),
+    gte(leads.createdAt, from),
+    lt(leads.createdAt, to),
+  ]
+  if (owner) leadConditions.push(eq(leads.ownerUserId, owner))
+
+  const leadRows = await db
+    .select({
+      id: leads.id,
+      createdAt: leads.createdAt,
+      status: leads.status,
+      interestProcedure: leads.interestProcedure,
+      objective: leads.objective,
+      bodyRegion: leads.bodyRegion,
+      previousTreatment: leads.previousTreatment,
+    })
+    .from(leads)
+    .where(and(...leadConditions))
+
+  const leadTotal = leadRows.length
+  const qualifiedLeads = leadRows.filter(
+    (lead) =>
+      lead.interestProcedure !== null ||
+      lead.objective !== null ||
+      lead.bodyRegion !== null ||
+      lead.previousTreatment !== null,
+  ).length
+  const optOuts = leadRows.filter((lead) => lead.status === 'opt_out').length
+
+  const outboundRows = await db
+    .select({ leadId: messages.leadId, createdAt: messages.createdAt })
+    .from(messages)
+    .innerJoin(leads, eq(messages.leadId, leads.id))
+    .where(
+      and(
+        eq(messages.tenantId, tenantId),
+        eq(messages.direction, 'outbound'),
+        gte(messages.createdAt, from),
+        lt(messages.createdAt, to),
+        ...(owner ? [eq(leads.ownerUserId, owner)] : []),
+      ),
+    )
+    .orderBy(messages.createdAt)
+
+  const firstResponse = new Map<string, Date>()
+  for (const row of outboundRows) {
+    if (!firstResponse.has(row.leadId)) {
+      firstResponse.set(row.leadId, row.createdAt)
+    }
+  }
+
+  const responseMinutes = leadRows
+    .map((lead) => {
+      const sentAt = firstResponse.get(lead.id)
+      return sentAt ? (sentAt.getTime() - lead.createdAt.getTime()) / 60_000 : null
+    })
+    .filter((value): value is number => value !== null && value >= 0)
+  const firstResponseMinutes =
+    responseMinutes.length > 0
+      ? Math.round(
+          (responseMinutes.reduce((sum, value) => sum + value, 0) / responseMinutes.length) * 10,
+        ) / 10
+      : null
+
+  const appointmentConditions = [
+    eq(appointments.tenantId, tenantId),
+    gte(appointments.scheduledAt, from),
+    lt(appointments.scheduledAt, to),
+  ]
+  if (owner) appointmentConditions.push(eq(appointments.ownerUserId, owner))
+  const [appointmentRow] = await db
+    .select({ total: count() })
+    .from(appointments)
+    .where(and(...appointmentConditions))
+
+  const enrollmentRows = await db
+    .select({
+      id: cadenceEnrollments.id,
+      leadId: cadenceEnrollments.leadId,
+      startedAt: cadenceEnrollments.startedAt,
+    })
+    .from(cadenceEnrollments)
+    .where(
+      and(
+        eq(cadenceEnrollments.tenantId, tenantId),
+        gte(cadenceEnrollments.createdAt, from),
+        lt(cadenceEnrollments.createdAt, to),
+      ),
+    )
+
+  const enrollmentLeadIds = new Set(enrollmentRows.map((row) => row.leadId))
+  const earliestEnrollment = new Map<string, Date>()
+  for (const row of enrollmentRows) {
+    const current = earliestEnrollment.get(row.leadId)
+    if (!current || row.startedAt < current) {
+      earliestEnrollment.set(row.leadId, row.startedAt)
+    }
+  }
+
+  const inboundRows = await db
+    .select({ leadId: messages.leadId, createdAt: messages.createdAt })
+    .from(messages)
+    .innerJoin(leads, eq(messages.leadId, leads.id))
+    .where(
+      and(
+        eq(messages.tenantId, tenantId),
+        eq(messages.direction, 'inbound'),
+        gte(messages.createdAt, from),
+        lt(messages.createdAt, to),
+        ...(owner ? [eq(leads.ownerUserId, owner)] : []),
+      ),
+    )
+
+  const cadenceResponses = inboundRows.filter((row) => {
+    if (!enrollmentLeadIds.has(row.leadId)) {
+      return false
+    }
+    const startedAt = earliestEnrollment.get(row.leadId)
+    return startedAt ? row.createdAt > startedAt : false
+  }).length
+
+  const [failedRow] = await db
+    .select({ total: count() })
+    .from(messages)
+    .innerJoin(leads, eq(messages.leadId, leads.id))
+    .where(
+      and(
+        eq(messages.tenantId, tenantId),
+        eq(messages.status, 'failed'),
+        gte(messages.createdAt, from),
+        lt(messages.createdAt, to),
+        ...(owner ? [eq(leads.ownerUserId, owner)] : []),
+      ),
+    )
+
+  const percentage = (value: number, total: number) =>
+    total > 0 ? Math.round((value / total) * 1000) / 10 : 0
+
+  return {
+    period: { from: from.toISOString(), to: to.toISOString() },
+    leads: leadTotal,
+    qualifiedLeads,
+    qualificationRate: percentage(qualifiedLeads, leadTotal),
+    firstResponseMinutes,
+    appointments: Number(appointmentRow?.total ?? 0),
+    cadenceEnrollments: enrollmentRows.length,
+    cadenceResponses,
+    cadenceResponseRate: percentage(cadenceResponses, enrollmentRows.length),
+    optOuts,
+    failedMessages: Number(failedRow?.total ?? 0),
   }
 }
 
