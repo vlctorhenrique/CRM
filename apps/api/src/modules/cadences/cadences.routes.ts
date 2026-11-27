@@ -12,8 +12,10 @@ import { getAuthContext } from '../../plugins/auth.js'
 import {
   createCadence,
   enrollLead,
+  enrollLeadsBatch,
   getCadence,
   listCadences,
+  listEligibleLeads,
   listEnrollments,
   updateCadence,
   updateEnrollment,
@@ -37,6 +39,20 @@ const listEnrollmentsQuerySchema = z.object({
   limit: z.coerce.number().int().min(1).max(100).default(50),
   offset: z.coerce.number().int().min(0).default(0),
 })
+
+const eligibleQuerySchema = z.object({
+  limit: z.coerce.number().int().min(1).max(200).default(100),
+})
+
+const batchEnrollBodySchema = z
+  .object({
+    leadIds: z.array(z.uuid()).min(1).max(100).optional(),
+    selectAll: z.boolean().optional(),
+    preview: z.boolean().default(true),
+  })
+  .refine((value) => value.selectAll === true || (value.leadIds?.length ?? 0) > 0, {
+    message: 'Informe leadIds ou selectAll.',
+  })
 
 function metadataFrom(request: {
   ip: string
@@ -122,7 +138,7 @@ export async function registerCadenceRoutes(app: FastifyInstance): Promise<void>
   app.post(
     '/v1/cadences/:cadenceId/enroll',
     {
-      preHandler: app.requireRole(['admin', 'manager']),
+      preHandler: app.authenticate,
       schema: { tags: ['Cadências'], summary: 'Inscreve um lead elegível na cadência' },
     },
     async (request, reply) => {
@@ -138,6 +154,43 @@ export async function registerCadenceRoutes(app: FastifyInstance): Promise<void>
         metadataFrom(request),
       )
       return reply.status(201).send({ enrollment })
+    },
+  )
+
+  app.post(
+    '/v1/cadences/:cadenceId/enroll-batch',
+    {
+      preHandler: app.authenticate,
+      schema: { tags: ['Cadências'], summary: 'Prévia ou inscrição em lote de leads elegíveis' },
+    },
+    async (request, reply) => {
+      const auth = getAuthContext(request)
+      const { cadenceId } = parseInput(cadenceParamsSchema, request.params)
+      const input = parseInput(batchEnrollBodySchema, request.body)
+      const result = await enrollLeadsBatch(
+        app.db,
+        { user: auth.user },
+        auth.tenant.id,
+        { ...input, cadenceId },
+        app.config.cadenceMaxAttempts,
+        metadataFrom(request),
+      )
+      return reply.send(result)
+    },
+  )
+
+  app.get(
+    '/v1/cadence-eligible-leads',
+    {
+      preHandler: app.authenticate,
+      schema: { tags: ['Cadências'], summary: 'Lista leads elegíveis para seleção' },
+    },
+    async (request, reply) => {
+      const auth = getAuthContext(request)
+      const filters = parseInput(eligibleQuerySchema, request.query)
+      return reply.send(
+        await listEligibleLeads(app.db, { user: auth.user }, auth.tenant.id, filters.limit),
+      )
     },
   )
 
