@@ -3,7 +3,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-import { getHealth, getReports } from '@/lib/api'
+import { getHealth, getPilotReport, getReports } from '@/lib/api'
 
 export const metadata = {
   title: 'Relatórios',
@@ -24,7 +24,11 @@ export default async function ReportsPage({
   searchParams: Promise<{ from?: string; to?: string }>
 }) {
   const filters = await searchParams
-  const [summary, health] = await Promise.all([getReports(filters), getHealth()])
+  const [summary, health, pilot] = await Promise.all([
+    getReports(filters),
+    getHealth(),
+    getPilotReport(filters),
+  ])
 
   return (
     <div className="space-y-6">
@@ -117,6 +121,27 @@ export default async function ReportsPage({
               </CardContent>
             </Card>
           </div>
+
+          {pilot ? (
+            <Card>
+              <CardHeader>
+                <CardTitle>Piloto</CardTitle>
+              </CardHeader>
+              <CardContent className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                <Metric
+                  label="1ª resposta"
+                  value={
+                    pilot.firstResponseMinutes === null ? '—' : `${pilot.firstResponseMinutes} min`
+                  }
+                />
+                <Metric label="Qualificação" value={`${pilot.qualificationRate}%`} />
+                <Metric label="Agendamentos" value={pilot.appointments} />
+                <Metric label="Respostas à cadência" value={`${pilot.cadenceResponseRate}%`} />
+                <Metric label="Opt-outs" value={pilot.optOuts} />
+                <Metric label="Falhas de envio" value={pilot.failedMessages} />
+              </CardContent>
+            </Card>
+          ) : null}
         </div>
       )}
     </div>

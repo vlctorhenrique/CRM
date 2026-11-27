@@ -15,6 +15,7 @@ import type {
   MeResponse,
   MessageTemplateView,
   NotificationListResponse,
+  PilotReport,
   ReportsSummary,
   WhatsAppAccountView,
 } from '@crm/shared'
@@ -155,6 +156,15 @@ export async function getEligibleLeads(): Promise<CadenceEligibleLeadsResponse['
     '/v1/cadence-eligible-leads?limit=100',
   )
   return data?.items ?? []
+}
+
+export async function getPilotReport(
+  filters: { from?: string | undefined; to?: string | undefined } = {},
+): Promise<PilotReport | null> {
+  const query = new URLSearchParams()
+  if (filters.from) query.set('from', filters.from)
+  if (filters.to) query.set('to', filters.to)
+  return authorizedGet<PilotReport>(`/v1/reports/pilot?${query.toString()}`)
 }
 
 export async function getReports(filters: {

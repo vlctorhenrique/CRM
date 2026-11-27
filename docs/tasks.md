@@ -34,15 +34,18 @@ cada merge. As Issues do GitHub espelham os mesmos IDs.
 | E5-02 | Tech lead  | Etapa 5: painel de seleção, contrato e docs                            | `feat/e5-selection-ui`     | E5-01        | #61   | #63 | done   |
 | E6-01 | Tech lead  | Etapa 6: backup monitorado no health e script de status                | `feat/e6-backup-monitor`   | E5-02        | #64   | #65 | done   |
 | E6-02 | Tech lead  | Etapa 6: testes de aceitação, contrato e docs                          | `feat/e6-acceptance`       | E6-01        | #64   | #66 | done   |
+| E7-01 | Tech lead  | Etapa 7: indicadores do piloto                                         | `feat/e7-pilot-metrics`    | E6-02        | #67   | #68 | done   |
+| E7-02 | Tech lead  | Etapa 7: painel, runbook de go-live e docs                             | `feat/e7-pilot-panel`      | E7-01        | #67   | #69 | done   |
 
 ## Observações
 
-- Sincronizado em 27/11/2026: **30 de 30 tarefas `done`**. B5 validado com webhook assinado,
+- Sincronizado em 27/11/2026: **32 de 32 tarefas `done`**. B5 validado com webhook assinado,
   inbound processado, envio real e idempotência (issue #19/PR #53); Etapa 3 entregue com extração,
   classificação, resumo e modo silencioso (issue #54/PRs #55–#57); Etapa 4 entregue com Kanban,
   fila de atribuição da SDR e agendamento manual existente (issue #58/PRs #59–#60); Etapa 5 com
   fila de elegíveis, prévia e inscrição em lote (issue #61/PRs #62–#63); Etapa 6 com backup
-  monitorado e testes de aceitação (issue #64/PRs #65–#66).
+  monitorado e testes de aceitação (issue #64/PRs #65–#66); Etapa 7 com métricas do piloto e
+  runbook de go-live (issue #67/PRs #68–#69).
 - Pós-release: #44 worker de IA, #45 notificações, #46 filtro de relatórios, #47/#49 docs,
   #50 proteção de credenciais, #51 correção da prévia, #52 redaction de logs, #53 fechamento do B5.
 - Estimativas: B0 2-3d; B1 4-5d; B2 6-8d; B3 4-5d; B4 2-3d; B5 3-5d; F 7-10d.

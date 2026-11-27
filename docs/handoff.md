@@ -36,7 +36,10 @@ seção. Ele não contém tokens nem segredos.
 - **Etapa 5 (README/PRD):** concluída em #62–#63 (issue #61): fila de elegíveis com motivos,
   prévia antes da inscrição em lote, SDR limitada aos próprios leads e auditoria por inscrição.
 - **Etapa 6 (README/PRD):** concluída em #65–#66 (issue #64): backup monitorado no `/health` e suíte
-  de aceitação dos critérios do MVP. `verify` e `test:e2e` verdes (21 arquivos, 121 testes).
+  de aceitação dos critérios do MVP.
+- **Etapa 7 (README/PRD):** pronta em #68–#69 (issue #67): `/v1/reports/pilot`, cartão no painel e
+  `docs/pilot.md` com go-live, rotina e rollback. O piloto real depende do número oficial e do token
+  permanente da Meta. `verify` e `test:e2e` verdes (21 arquivos, 122 testes).
 - **Proteção de `main`:** não disponível no plano atual do repositório privado; PR + CI `verify`
   continuam obrigatórios por convenção até o repo ser público/Pro.
 
@@ -245,6 +248,7 @@ No Windows, para encerrar a API: localizar o PID com
 
 ## Prompt para a próxima seção
 
-> Leia `docs/handoff.md`: B0–B5, F e Etapas 3–6 do README estão concluídos. A próxima frente é a
-> Etapa 7 (piloto com uma clínica e um número oficial). Para retomar a integração live, gere um
-> token novo, reinicie a prévia e configure um novo túnel; nunca exponha nem versione tokens.
+> Leia `docs/handoff.md` e `docs/pilot.md`: B0–B5, F e Etapas 3–7 do README estão concluídos/prontos.
+> O piloto depende apenas de número oficial e token permanente da Meta. Para retomar a integração
+> live, gere um token novo, reinicie a prévia e configure um novo túnel; nunca exponha nem versione
+> tokens.

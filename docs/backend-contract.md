@@ -211,6 +211,7 @@ interna para a SDR. Em atendimento humano, `aiEnabled=false` mantém a análise 
 | Método | Rota                       | Permissão   | Descrição                            |
 | ------ | -------------------------- | ----------- | ------------------------------------ |
 | GET    | `/v1/reports/summary`      | autenticado | Funil, agenda, cadências e mensagens |
+| GET    | `/v1/reports/pilot`        | autenticado | Indicadores do piloto                |
 | GET    | `/v1/reports/cadences`     | autenticado | Desempenho por cadência              |
 | GET    | `/v1/reports/appointments` | autenticado | Agenda por período/status            |
 
@@ -301,5 +302,8 @@ Body: `{ "phone": "...", "name?": "...", "text": "..." }`. Retorna `processed`, 
 - E6 (Etapa 6 do README/PRD): suíte `apps/api/test/acceptance.test.ts` cobre primeiro atendimento
   único, IA assistiva/silenciosa sem envio, ausência de cadência sem seleção e bloqueio por opt-out;
   backup monitorado no `/health`.
+- E7 (Etapa 7 do README/PRD): `/v1/reports/pilot` e o painel exibem tempo de primeira resposta,
+  qualificação, agendamentos, resposta à cadência, opt-outs e falhas; go-live com número oficial
+  segue `docs/pilot.md`.
 - B4: relatórios filtram tenant/período/responsável; health expõe backlog do worker; contrato v1
   publicado; handoff atualizado.

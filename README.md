@@ -207,7 +207,7 @@ Para recomeçar do zero, pare a API e remova `apps/api/.pglite-preview`.
 2. **Etapa 4 — concluída:** Pipeline/Kanban, permissões da SDR e registro manual de agendamento.
 3. **Etapa 5 — concluída:** Fila de elegíveis, seleção, templates, cadências de até sete dias, opt-out e idempotência.
 4. **Etapa 6 — concluída:** Indicadores, notificações, backup monitorado e testes de aceitação.
-5. **Etapa 7 — próxima:** Piloto com uma clínica e um número oficial.
+5. **Etapa 7 — pronta:** Piloto com uma clínica e um número oficial; ver `docs/pilot.md`.
 
 A integração com o UNO e a agenda nativa estão fora do MVP, conforme o adendo v1.1.
 
@@ -215,4 +215,5 @@ A integração com o UNO e a agenda nativa estão fora do MVP, conforme o adendo
 
 - [Arquitetura](docs/architecture.md)
 - [Deploy em VPS](docs/deploy.md)
+- [Runbook do piloto](docs/pilot.md)
 - [Contexto atual e handoff](docs/handoff.md)
