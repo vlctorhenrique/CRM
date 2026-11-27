@@ -136,6 +136,11 @@ Regras:
 `granted` exige evidência e versão; atualiza `consent_at`, `consent_evidence`,
 `consent_text_version` e auditoria. `revoked` bloqueia envios e cancela cadências.
 
+O painel oferece visão de lista e Kanban (`/leads?view=kanban`) com colunas agrupando os 13 status;
+o seletor de cada card usa `PATCH /v1/leads/:leadId` e respeita o RBAC da API. O filtro
+`assignment=mine|unassigned` sustenta a fila da SDR; a SDR altera status apenas dos próprios leads
+e não altera responsável sem permissão administrativa.
+
 ### Appointments
 
 | Método | Rota                              | Permissão   | Descrição                               |
@@ -280,5 +285,7 @@ Body: `{ "phone": "...", "name?": "...", "text": "..." }`. Retorna `processed`, 
   classificação sem inventar dados; encaminha dúvidas clínicas/preço à SDR; nenhum envio automático.
 - E3 (Etapa 3 do README/PRD): análise continua em atendimento humano (`silent=true`), preenche
   somente campos vazios do lead e notifica a SDR nos casos fora de escopo.
+- E4 (Etapa 4 do README/PRD): Kanban agrupa status em etapas, movimentação via `PATCH` com RBAC,
+  filtro `assignment` na fila da SDR e agendamento manual registrado sem integração UNO.
 - B4: relatórios filtram tenant/período/responsável; health expõe backlog do worker; contrato v1
   publicado; handoff atualizado.
