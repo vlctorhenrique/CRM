@@ -11,6 +11,8 @@ import { toAppConfig } from './src/config/env.js'
 import type { AppDatabase } from './src/db/client.js'
 import * as schema from './src/db/schema/index.js'
 import { hashPassword } from './src/lib/crypto.js'
+import { startAiWorker } from './src/modules/ai/ai.worker.js'
+import { startCadenceWorker } from './src/modules/cadences/cadence.worker.js'
 import { ensureWhatsAppAccount } from './src/modules/whatsapp/whatsapp.service.js'
 
 const currentDirectory = path.dirname(fileURLToPath(import.meta.url))
@@ -451,7 +453,7 @@ async function main(): Promise<void> {
     LOG_LEVEL: process.env.LOG_LEVEL ?? 'info',
     ENABLE_API_DOCS: 'true',
     ENABLE_DEV_SIMULATOR: 'true',
-    CADENCE_WORKER_ENABLED: 'false',
+    CADENCE_WORKER_ENABLED: process.env.CADENCE_WORKER_ENABLED ?? 'true',
     RATE_LIMIT_MAX: '1000',
     APP_VERSION: '0.1.0-preview',
     WHATSAPP_MODE: whatsappMode,
@@ -478,8 +480,13 @@ async function main(): Promise<void> {
 
   const app = await buildApp({ config, db, redis: null })
 
+  const cadenceWorker = startCadenceWorker({ db, config, log: app.log })
+  const aiWorker = startAiWorker({ db, config, log: app.log })
+
   const shutdown = async (signal: string): Promise<void> => {
     app.log.info({ signal }, 'Encerrando prévia da API')
+    await cadenceWorker.stop()
+    await aiWorker.stop()
     await app.close()
     await client.close()
     process.exit(0)
