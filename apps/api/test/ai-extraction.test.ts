@@ -161,4 +161,43 @@ describe('extração determinística de informações do lead', () => {
     expect(partial.confidence).toBeGreaterThan(0)
     expect(complete.confidence).toBeLessThanOrEqual(1)
   })
+
+  it('classifica qualificação sem exigir atendimento humano', () => {
+    const result = extractLeadInfo('Quero botox na testa para suavizar rugas.')
+
+    expect(result.classification).toBe('qualification')
+    expect(result.requiresSdr).toBe(false)
+  })
+
+  it('classifica agendamento sem exigir atendimento humano', () => {
+    const result = extractLeadInfo('Quero agendar uma avaliação. Qual horário vocês têm?')
+
+    expect(result.classification).toBe('scheduling')
+    expect(result.requiresSdr).toBe(false)
+  })
+
+  it('classifica dúvida clínica e encaminha para a SDR', () => {
+    const result = extractLeadInfo('Esse procedimento tem algum risco? Sou gestante.')
+
+    expect(result.classification).toBe('clinical_question')
+    expect(result.requiresSdr).toBe(true)
+  })
+
+  it('classifica dúvida de preço e encaminha para a SDR', () => {
+    const result = extractLeadInfo('Quanto custa a harmonização facial?')
+
+    expect(result.classification).toBe('pricing_question')
+    expect(result.requiresSdr).toBe(true)
+  })
+
+  it('classifica fora de escopo e encaminha para a SDR', () => {
+    const result = extractLeadInfo('Vocês integram com o UNO?')
+
+    expect(result.classification).toBe('out_of_scope')
+    expect(result.requiresSdr).toBe(true)
+  })
+
+  it('classifica mensagem genérica como other', () => {
+    expect(extractLeadInfo('Olá, tudo bem?').classification).toBe('other')
+  })
 })

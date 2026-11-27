@@ -1,11 +1,69 @@
+export const AI_MESSAGE_CLASSIFICATIONS = [
+  'qualification',
+  'scheduling',
+  'clinical_question',
+  'pricing_question',
+  'out_of_scope',
+  'other',
+] as const
+
+export type AiMessageClassification = (typeof AI_MESSAGE_CLASSIFICATIONS)[number]
+
 export interface LeadExtraction {
   procedure: string | null
   objective: string | null
   bodyRegion: string | null
   previousTreatment: boolean | null
   summary: string
+  classification: AiMessageClassification
+  requiresSdr: boolean
   confidence: number
 }
+
+const CLINICAL_PATTERNS: RegExp[] = [
+  /\bcontraindic/,
+  /\befeito(s)? colateral/,
+  /\briscos?\b/,
+  /\b(e|eh) seguro\b/,
+  /\bgravidez\b/,
+  /\bgestante\b/,
+  /\bamamentando\b/,
+  /\bdiagnostico\b/,
+  /\bposso fazer\b/,
+  /\bdevo fazer\b/,
+  /\brecomenda\b/,
+  /\bindicad[oa] para\b/,
+  /\bfunciona (mesmo|realmente)\b/,
+  /\bgarantid/,
+]
+
+const PRICING_PATTERNS: RegExp[] = [
+  /\bpreco\b/,
+  /\bvalor\b/,
+  /\bquanto custa\b/,
+  /\bcusta\b/,
+  /\borcamento\b/,
+  /\bparcel/,
+  /\bfinanci/,
+  /\bdesconto\b/,
+  /\bpromoc/,
+]
+
+const SCHEDULING_PATTERNS: RegExp[] = [
+  /\bagendar\b/,
+  /\bagendamento\b/,
+  /\bhorarios?\b/,
+  /\bdisponibilidade\b/,
+  /\bmarcar\b/,
+  /\bvagas?\b/,
+  /\bquando\b/,
+  /\b(unidade|endereco)\b/,
+]
+
+const OUT_OF_SCOPE_PATTERNS: RegExp[] = [
+  /\b(uno|recepcao|totem|sistema de agenda|cobranca|pagamento online)\b/,
+  /\b(medicamento|receita|exame|cirurgia)\b/,
+]
 
 interface PhraseRule {
   label: string
@@ -174,7 +232,46 @@ function buildSummary(text: string): string {
   return `${collapsed.slice(0, SUMMARY_MAX_LENGTH - 1).trimEnd()}…`
 }
 
-function computeConfidence(extraction: Omit<LeadExtraction, 'confidence'>): number {
+function classifyMessage(text: string, extraction: ExtractionFields): AiMessageClassification {
+  if (earliestMatchIndex(text, OUT_OF_SCOPE_PATTERNS) !== -1) {
+    return 'out_of_scope'
+  }
+
+  if (earliestMatchIndex(text, CLINICAL_PATTERNS) !== -1) {
+    return 'clinical_question'
+  }
+
+  if (earliestMatchIndex(text, PRICING_PATTERNS) !== -1) {
+    return 'pricing_question'
+  }
+
+  if (earliestMatchIndex(text, SCHEDULING_PATTERNS) !== -1) {
+    return 'scheduling'
+  }
+
+  if (
+    extraction.procedure !== null ||
+    extraction.objective !== null ||
+    extraction.bodyRegion !== null ||
+    extraction.previousTreatment !== null
+  ) {
+    return 'qualification'
+  }
+
+  return 'other'
+}
+
+function requiresSdr(classification: AiMessageClassification): boolean {
+  return (
+    classification === 'clinical_question' ||
+    classification === 'pricing_question' ||
+    classification === 'out_of_scope'
+  )
+}
+
+type ExtractionFields = Omit<LeadExtraction, 'classification' | 'requiresSdr' | 'confidence'>
+
+function computeConfidence(extraction: ExtractionFields): number {
   if (extraction.summary.length === 0) {
     return 0
   }
@@ -209,9 +306,12 @@ export function extractLeadInfo(text: string): LeadExtraction {
     previousTreatment: extractPreviousTreatment(normalized),
     summary: buildSummary(text),
   }
+  const classification = classifyMessage(normalized, extraction)
 
   return {
     ...extraction,
+    classification,
+    requiresSdr: requiresSdr(classification),
     confidence: computeConfidence(extraction),
   }
 }
