@@ -257,14 +257,17 @@ export default async function SettingsPage() {
           {
             icon: Bot,
             title: 'IA assistiva',
-            stage: 'Etapa 3',
-            description: 'Extração de dados, classificação e resumo silencioso.',
+            stage: 'Concluída',
+            done: true,
+            description:
+              'Extração, classificação e resumo silencioso; sem resposta automática no chat.',
           },
           {
             icon: RefreshCw,
             title: 'Motor de cadências',
-            stage: 'Etapa 5',
-            description: 'Filas persistentes, idempotência e janela de envio.',
+            stage: 'Concluído',
+            done: true,
+            description: 'Fila de elegíveis, seleção com prévia, idempotência e janela de envio.',
           },
         ].map((integration) => {
           const Icon = integration.icon
@@ -275,7 +278,7 @@ export default async function SettingsPage() {
                 <span className="flex size-9 items-center justify-center rounded-xl bg-brand-50 text-brand-700">
                   <Icon className="size-4" aria-hidden="true" />
                 </span>
-                <Badge tone="neutral">{integration.stage}</Badge>
+                <Badge tone={integration.done ? 'success' : 'neutral'}>{integration.stage}</Badge>
               </div>
               <h3 className="mt-4 text-sm font-semibold text-ink">{integration.title}</h3>
               <p className="mt-1 text-xs leading-relaxed text-muted">{integration.description}</p>

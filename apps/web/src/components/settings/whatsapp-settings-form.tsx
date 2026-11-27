@@ -168,7 +168,8 @@ export function WhatsAppSettingsForm({
               <span className="text-sm text-ink-soft">
                 Habilitar IA assistiva nesta conta
                 <span className="block text-xs text-muted">
-                  A IA entra na Etapa 3; a preferência fica registrada desde já.
+                  Ative a análise assistiva (extração, resumo e classificação). A IA nunca envia
+                  mensagens; com atendimento humano ela continua em modo silencioso.
                 </span>
               </span>
             </label>
